@@ -92,16 +92,30 @@ namespace Bank
             PrintAccounts();
             Console.WriteLine();
 
-            string c = GetTextFromUser("The account from which the funds will be withdrawn - enter your account name");
-            while (string.IsNullOrWhiteSpace(c))
+            List<Account> guidNumber = _finances.GetAllAccounts();
+            string c = null;
+            bool accountFrom = false;
+            do
             {
-                Console.WriteLine("Incorrect name - try again...");
                 c = GetTextFromUser("The account from which the funds will be withdrawn - enter your account name");
-            }
+                
+                foreach (Account account in guidNumber)
+                {
+                    if (account.AccountName == c)
+                    {
+                        accountFrom = true;
+                    }
+                }
+
+                if (accountFrom == false)
+                {
+                    Console.WriteLine("There is no such account - try again...");
+                }
+
+            } while (accountFrom == false);
 
             Guid targetAccount = GetGuidFromUser("The number of GUID");
-            List<Account> guidNumber = _finances.GetAllAccounts();
-            
+             
             double amount = GetDoubleFromUser("Transfer amount");
             for (int i = 0; i < guidNumber.Count; i++)
             {
@@ -110,12 +124,11 @@ namespace Bank
                     while (amount < 0 || amount > guidNumber[i].AccountBalance)
                     {
                         Console.WriteLine("Wrong amount - try again...");
-                        return;
+                        amount = GetDoubleFromUser("Transfer amount");
                     }
                 }
             }
 
-            
             Guid sourceAccount = default(Guid);
             
             for (int i = 0; i < guidNumber.Count; i++)
@@ -126,11 +139,12 @@ namespace Bank
                 }
             }
 
-            //if (sourceAccount==default(Guid))
-            //{
-            //    Console.WriteLine("No field found");
-            //    return;
-            //}
+            if (sourceAccount == default(Guid))         
+            {
+                Console.WriteLine("No field found");    
+                return;
+            }
+
             string title = GetTextFromUser("Transfer title");
             while (string.IsNullOrWhiteSpace(title))
             {
@@ -190,38 +204,54 @@ namespace Bank
             PrintAccounts();
             Console.WriteLine();
 
-            string a = GetTextFromUser("The account from which the funds will be withdrawn - enter your account name");
+            string a = null;
+            bool accountFrom = false;
+            do
+            {
+                a= GetTextFromUser("The account from which the funds will be withdrawn - enter your account name");
+                
+                foreach (Account account in guidNumber) 
+                { 
+                    if (account.AccountName==a)
+                    {
+                        accountFrom = true;
+                    }
+                }
+                
+                if (accountFrom == false)
+                {
+                    Console.WriteLine("There is no such account - try again...");
+                }
+            } while (accountFrom==false);
 
-                //for (int i = 0; i < guidNumber.Count; i++)
-                //{
-                //    do
-                //    {
-                //        a = GetTextFromUser("The account from which the funds will be withdrawn - enter your account name");
+            string b = null;
+            bool accountTo = false;
+            do
+            {
+                b = GetTextFromUser("The account to which the funds will be transferred - enter your account name");
+                do
+                {
+                    if (a == b)
+                    {
+                        Console.WriteLine("Same account selected - try again...");
+                        b = GetTextFromUser("The account to which the funds will be transferred - enter your account name");
+                    }
 
-                //    } while (guidNumber[i].AccountName == a);
+                } while (a==b);
+                 
+                foreach (Account account in guidNumber)
+                {
+                    if (account.AccountName == b)
+                    {
+                        accountTo = true;
+                    }
+                }
 
-
-                //}
-
-                //for (int i = 0; i < guidNumber.Count; i++)
-                //{
-                //    while (a != guidNumber[i].AccountName)
-                //    {
-                //        Console.WriteLine("There is no such account");
-                //        return;
-                //    }
-                //}
-            
-            string b = GetTextFromUser("The account to which the funds will be transferred - enter your account name");
-
-            //for (int i = 0; i < guidNumber.Count; i++)
-            //{
-            //    if (b != guidNumber[i].AccountName)
-            //    {
-            //        Console.WriteLine("There is no such account");
-            //        return;
-            //    }
-            //}
+                if (accountFrom == false)
+                {
+                    Console.WriteLine("There is no such account - try again...");
+                }
+            } while (accountTo == false);
 
             double amount = GetDoubleFromUser("Transfer amount");
             for (int i = 0; i < guidNumber.Count; i++)
@@ -231,7 +261,7 @@ namespace Bank
                     while (amount < 0 || amount > guidNumber[i].AccountBalance)
                     {
                         Console.WriteLine("Wrong amount - try again...");
-                        return;
+                        amount = GetDoubleFromUser("Transfer amount");
                     }
                 }
             }
@@ -250,24 +280,20 @@ namespace Bank
                 {
                     targetAccount = guidNumber[i].AccountNumber;
                 }
-                if (sourceAccount==targetAccount)
-                {
-                    Console.WriteLine("It is no possible to make an internal transfer-wrong account selected.");
-                    return;
-                }
             }
 
-            //if (sourceAccount == default(Guid))
-            //{
-            //    Console.WriteLine("No field found");
-            //    return;
-            //}
+            if (sourceAccount == default(Guid))
+            {
+                Console.WriteLine("No field found");
+                return;
+            }
 
-            //if (targetAccount == default(Guid))
-            //{
-            //    Console.WriteLine("No field found");
-            //    return;
-            //}
+            if (targetAccount == default(Guid))
+            {
+                Console.WriteLine("No field found");
+                return;
+            }
+
             string title = GetTextFromUser("Transfer title");
             while (string.IsNullOrWhiteSpace(title))
             {
@@ -291,84 +317,23 @@ namespace Bank
             _transfersHistory.AddTransfer(newTransfer);
         }
 
-        //Account debitAccount = GetAccountByName(a);
-        //Account creditAccount = GetAccountByName(b);
-
-        //bool correctAmount;
-
-        //do
-        //{
-        //                                //for (int i = 0; i < accounts.Count; i++)
-        //                                //{
-        //                                //    if (accounts[i].AccountName == a)
-        //                                //    {
-        //                                //        debitAccount = accounts[i];
-        //                                //    };
-        //                                //    if (accounts[i].AccountName == b)
-        //                                //    {
-        //                                //        creditAccount = accounts[i];
-        //                                //    };                    
-        //                                //}
-
-        //    correctAmount = (amount > 0 && amount <= debitAccount.AccountBalance);
-        //    if (!correctAmount)
-        //    {
-        //        Console.WriteLine("zła kwota");
-        //    }
-        //} while (!correctAmount);
-
-
-
-
-
-        //    while (amount < 0 || amount > newAccount.AccountBalance)
-        //    {
-        //        Console.WriteLine("Wrong amount - try again...");
-        //        amount = GetDoubleFromUser("Transfer amount");
-        //    }
-        //}
-
-        //private Account GetAccountByName(string accountName)
-        //{
-        //    List<Account> accounts = _finances.GetAllAccounts();
-        //    Account accountToReturn = null;
-        //    foreach (Account account in accounts)
-        //    {
-        //        if (account.AccountName == accountName)
-        //        {
-        //            accountToReturn = account;
-        //        }               
-        //    };
-        //    return accountToReturn;
-        //}
-
-        //private void IfIsNullOrWhiteSpace(string instruction)
-        //{
-        //    while (string.IsNullOrWhiteSpace(instruction))
-        //    {
-        //        Console.WriteLine("Incorrect name - try again...");
-        //        instruction = GetTextFromUser(instruction);
-        //    }
-
-        //}
-
         private void MakeADomesticTransfer(string account1, string account2, double amount)
         {
             List <Account> domesticTransfer = _finances.GetAllAccounts();
             for (int i= 0; i< domesticTransfer.Count; i++) 
             {
-                    Account k = domesticTransfer[i];
-                    if (k.AccountName == account1)
-                    {
-                        k.AccountBalance = k.AccountBalance - amount;
-                        Console.WriteLine($"Account: \"{k.AccountName}\" - Balance: {k.AccountBalance}$");
-                    }
-                    
-                    if (k.AccountName == account2)
-                    {
-                        k.AccountBalance = k.AccountBalance + amount;
-                        Console.WriteLine($"Account: \"{k.AccountName}\" - Balance: {k.AccountBalance}$");
-                    }
+                Account k = domesticTransfer[i];
+                if (k.AccountName == account1)
+                {
+                    k.AccountBalance = k.AccountBalance - amount;
+                    Console.WriteLine($"Account: \"{k.AccountName}\" - Balance: {k.AccountBalance}$");
+                }
+                
+                if (k.AccountName == account2)
+                {
+                    k.AccountBalance = k.AccountBalance + amount;
+                    Console.WriteLine($"Account: \"{k.AccountName}\" - Balance: {k.AccountBalance}$");
+                }
             }
         }
 
@@ -376,9 +341,9 @@ namespace Bank
         {
             double amount;
             while (!double.TryParse(GetTextFromUser(message), out amount))
-                {
-                    Console.WriteLine("Negative value - try again...");
-                }
+            {
+                Console.WriteLine("Negative value - try again...");
+            }
             return amount; 
         }
 
