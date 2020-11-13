@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 
 namespace Bank
 {
@@ -203,62 +202,48 @@ namespace Bank
 
             PrintAccounts();
             Console.WriteLine();
+            Console.WriteLine("Make a domestic transfer:");
 
-            string a = null;
+            string accountNameFrom;
             bool accountFrom = false;
             do
             {
-                a= GetTextFromUser("The account from which the funds will be withdrawn - enter your account name");
+                accountNameFrom = GetTextFromUser("The account from which the funds will be withdrawn - enter your account name");
                 
-                foreach (Account account in guidNumber) 
-                { 
-                    if (account.AccountName==a)
-                    {
-                        accountFrom = true;
-                    }
-                }
-                
-                if (accountFrom == false)
-                {
-                    Console.WriteLine("There is no such account - try again...");
-                }
-            } while (accountFrom==false);
+                string message = "There is no such account - try again...";
+                accountFrom = CheckingIfTheAccountNameIsOnTheList(guidNumber, accountNameFrom, accountFrom, message);
+            } while (accountFrom == false);
 
-            string b = null;
+            string accountNameTo;
             bool accountTo = false;
             do
             {
-                b = GetTextFromUser("The account to which the funds will be transferred - enter your account name");
-                do
+                accountNameTo = GetTextFromUser("The account to which the funds will be transferred - enter your account name");
+                
+                string message = "There is no such account - try again...";
+                accountTo = CheckingIfTheAccountNameIsOnTheList(guidNumber, accountNameTo, accountTo, message);
+                
+                if (accountNameFrom == accountNameTo)
                 {
-                    if (a == b)
-                    {
-                        Console.WriteLine("Same account selected - try again...");
-                        b = GetTextFromUser("The account to which the funds will be transferred - enter your account name");
-                    }
-
-                } while (a==b);
-                 
-                foreach (Account account in guidNumber)
-                {
-                    if (account.AccountName == b)
-                    {
-                        accountTo = true;
-                    }
-                }
-
-                if (accountFrom == false)
-                {
-                    Console.WriteLine("There is no such account - try again...");
+                    Console.WriteLine("Same account selected - try again...");
+                    accountTo = false;
                 }
             } while (accountTo == false);
+
+
+
+
+
+
+
+
 
             double amount = GetDoubleFromUser("Transfer amount");
             for (int i = 0; i < guidNumber.Count; i++)
             {
-                if (guidNumber[i].AccountName == a)
+                if (guidNumber[i].AccountName == accountNameFrom)
                 {
-                    while (amount < 0 || amount > guidNumber[i].AccountBalance)
+                    while (amount <= 0 || amount > guidNumber[i].AccountBalance)
                     {
                         Console.WriteLine("Wrong amount - try again...");
                         amount = GetDoubleFromUser("Transfer amount");
@@ -271,12 +256,12 @@ namespace Bank
 
             for (int i = 0; i < guidNumber.Count; i++)
             {
-                if (guidNumber[i].AccountName == a)
+                if (guidNumber[i].AccountName == accountNameFrom)
                 {
                     sourceAccount = guidNumber[i].AccountNumber;
                 }
 
-                if (guidNumber[i].AccountName == b)
+                if (guidNumber[i].AccountName == accountNameTo)
                 {
                     targetAccount = guidNumber[i].AccountNumber;
                 }
@@ -312,9 +297,27 @@ namespace Bank
             };
             Console.WriteLine($"Date of the transfer: {newTransfer.DateOfTheTransfer}");
 
-            MakeADomesticTransfer(a, b, amount);
+            MakeADomesticTransfer(accountNameFrom, accountNameTo, amount);
 
             _transfersHistory.AddTransfer(newTransfer);
+        }
+
+        private static bool CheckingIfTheAccountNameIsOnTheList(List<Account> List, string accountName, bool accountTrue, string message)
+        {
+            for (int i = 0; i < List.Count; i++)
+            {
+                if (accountName == List[i].AccountName)
+                {
+                    accountTrue = true;
+                }
+            }
+
+            if (accountTrue == false)
+            {
+                Console.WriteLine(message);
+                Console.WriteLine();
+            }
+            return accountTrue;
         }
 
         private void MakeADomesticTransfer(string account1, string account2, double amount)
@@ -366,24 +369,30 @@ namespace Bank
         private void CreateAccount()
         {
             Console.WriteLine("Create Account:");
-            
-            string accountName = GetTextFromUser("Provide account name");
-            while (string.IsNullOrWhiteSpace(accountName))
-            {
-                Console.WriteLine("Incorrect name - try again...");
-                accountName = GetTextFromUser("Provide account name");
-            }
 
+            string accountName;
+            bool createAccount;
             List<Account> sprawdzenie = _finances.GetAllAccounts();
-            for (int i = 0; i < sprawdzenie.Count; i++)
+            do
             {
-               while (accountName == sprawdzenie[i].AccountName )
-               {
-                   Console.WriteLine("The name exist - try again...");
-                   return;
-               }
-            }
-
+                accountName = GetTextFromUser("Provide account name");
+                createAccount = true;
+                if (string.IsNullOrWhiteSpace(accountName))
+                {
+                    Console.WriteLine("Incorrect name - try again...");
+                    createAccount = false;
+                }
+                
+                for (int i = 0; i < sprawdzenie.Count; i++)
+                {
+                    if (accountName == sprawdzenie[i].AccountName)
+                    {
+                        Console.WriteLine("The name exist - try again...");
+                        createAccount = false;
+                    }
+                }
+            } while (createAccount==false);
+            
             Account newAccount = new Account()
             {
                 AccountName = accountName,
