@@ -18,7 +18,5 @@ namespace Bank
         {
             return _bankAccounts.ToList();
         }
-
-
     }
 }

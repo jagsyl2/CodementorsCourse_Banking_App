@@ -7,8 +7,7 @@ namespace Bank
     {
         static void Main(string[] args)
         {
-            new Program().Run();
-        
+            new Program().Run();       
         }
 
         private Finances _finances = new Finances();
@@ -55,8 +54,7 @@ namespace Bank
                     default:
                         Console.WriteLine("Unknown option");
                         break;
-                }
-            
+                }            
             } while (!exit);
         }
 
@@ -102,35 +100,20 @@ namespace Bank
             PrintAccounts();
             Console.WriteLine();
             Console.WriteLine("Make an outgoing transfer:");
-            
-            string accountNameFrom;
-            bool accountFrom = false;
-            do
-            {
-                accountNameFrom = GetTextFromUser("The account from which the funds will be withdrawn - enter your account name");
 
-                string message = "There is no such account - try again...";
-                accountFrom = CheckingIfTheAccountNameIsOnTheList(outgoingTransfers, accountNameFrom, accountFrom, message);
-            }
-            while (accountFrom == false);
+            string debitMessage = "The account from which the funds will be withdrawn - enter your debit account name";
+            string accountNameFrom = EnterYourAccountName(outgoingTransfers, debitMessage, null);
 
             Guid targetAccount = GetGuidFromUser("The number of GUID");
 
             double amount;
-            bool goodAmount;
-            GetAmountFromUser(outgoingTransfers, accountNameFrom, out amount, out goodAmount);
+            GetAmountFromUser(outgoingTransfers, accountNameFrom, out amount);
 
             Guid sourceAccount = default(Guid);
             sourceAccount = AssignmentGuidToAccount(outgoingTransfers, accountNameFrom, sourceAccount);
-            if (sourceAccount == default(Guid))
-            {
-                Console.WriteLine("No field found");
-                return;
-            }
 
             string title;
-            bool correctTitle;
-            GetTheTitleOfTransfer(out title, out correctTitle);
+            GetTheTitleOfTransfer(out title);
 
             Transfer newTransferOut = new Transfer()
             {
@@ -185,58 +168,23 @@ namespace Bank
             Console.WriteLine();
             Console.WriteLine("Make a domestic transfer:");
 
-            string accountNameFrom;
-            bool accountFrom = false;
-            do
-            {
-                accountNameFrom = GetTextFromUser("The account from which the funds will be withdrawn - enter your account name");
+            string debitMessage = "The account from which the funds will be withdrawn - enter your debit account name";
+            string accountNameFrom = EnterYourAccountName(numberOfAccounts, debitMessage, null);
 
-                string message = "There is no such account - try again...";
-                accountFrom = CheckingIfTheAccountNameIsOnTheList(numberOfAccounts, accountNameFrom, accountFrom, message);
-            }
-            while (accountFrom == false);
-            
-            string accountNameTo;
-            bool accountTo = false;
-            
-            do
-            {
-                accountNameTo = GetTextFromUser("The account to which the funds will be transferred - enter your account name");
+            string creditMessage = "The account to which the funds will be transferred - enter your credit account name";
+            string accountNameTo = EnterYourAccountName(numberOfAccounts, creditMessage, accountNameFrom, true);
 
-                string message = "There is no such account - try again...";
-                accountTo = CheckingIfTheAccountNameIsOnTheList(numberOfAccounts, accountNameTo, accountTo, message);
-
-                if (accountNameFrom == accountNameTo)
-                {
-                    Console.WriteLine("Same account selected - try again...");
-                    accountTo = false;
-                }
-            }
-            while (accountTo == false);
-            
             double amount;
-            bool goodAmount;
-            GetAmountFromUser(numberOfAccounts, accountNameFrom, out amount, out goodAmount);
+            GetAmountFromUser(numberOfAccounts, accountNameFrom, out amount);
 
             Guid sourceAccount = default(Guid);
             sourceAccount = AssignmentGuidToAccount(numberOfAccounts, accountNameFrom, sourceAccount);
-            //if (sourceAccount == default(Guid))
-            //{
-            //    Console.WriteLine("No field found");
-            //    return;
-            //}
 
             Guid targetAccount = default(Guid);
             targetAccount = AssignmentGuidToAccount(numberOfAccounts, accountNameFrom, targetAccount);
-            //if (targetAccount == default(Guid))
-            //{
-            //    Console.WriteLine("No field found");
-            //    return;
-            //}
 
             string title;
-            bool correctTitle;
-            GetTheTitleOfTransfer(out title, out correctTitle);
+            GetTheTitleOfTransfer(out title);
 
             Transfer newTransfer = new Transfer()
             {
@@ -254,8 +202,31 @@ namespace Bank
             _transfersHistory.AddTransfer(newTransfer);
         }
 
-        private void GetTheTitleOfTransfer(out string title, out bool correctTitle)
+        private string EnterYourAccountName(List<Account> list, string instruction, string accountCredit, bool debitEqualCredit = false)
         {
+            string accountName;
+            bool accountTo = false;
+            do
+            {
+                accountName = GetTextFromUser(instruction);
+
+                string message = "There is no such account - try again...";
+                accountTo = CheckingIfTheAccountNameIsOnTheList(list, accountName, accountTo, message);
+
+                if ((debitEqualCredit == true) && (accountCredit == accountName))
+                {
+                    Console.WriteLine("Same account selected - try again...");
+                    Console.WriteLine();
+                    accountTo = false;
+                }
+            }
+            while (accountTo == false);
+            return accountName;
+        }
+
+        private void GetTheTitleOfTransfer(out string title)
+        {
+            bool correctTitle;
             do
             {
                 title = GetTextFromUser("Transfer title");
@@ -275,12 +246,12 @@ namespace Bank
                     sourceAccount = numberOfAccounts[i].AccountNumber;
                 }
             }
-
             return sourceAccount;
         }
 
-        private void GetAmountFromUser(List<Account> numberOfAccounts, string accountNameFrom, out double amount, out bool goodAmount)
+        private void GetAmountFromUser(List<Account> numberOfAccounts, string accountNameFrom, out double amount)
         {
+            bool goodAmount;
             do
             {
                 amount = GetDoubleFromUser("Transfer amount");
@@ -290,6 +261,7 @@ namespace Bank
                     if (numberOfAccounts[i].AccountName == accountNameFrom && (amount <= 0 || amount > numberOfAccounts[i].AccountBalance))
                     {
                         Console.WriteLine("Wrong amount - try again...");
+                        Console.WriteLine();
                         goodAmount = false;
                     }
                 }
@@ -297,11 +269,11 @@ namespace Bank
             while (goodAmount == false);
         }
 
-        private static bool CheckingIfTheAccountNameIsOnTheList(List<Account> List, string accountName, bool accountTrue, string message)
+        private bool CheckingIfTheAccountNameIsOnTheList(List<Account> list, string accountName, bool accountTrue, string message)
         {
-            for (int i = 0; i < List.Count; i++)
+            for (int i = 0; i < list.Count; i++)
             {
-                if (accountName == List[i].AccountName)
+                if (accountName == list[i].AccountName)
                 {
                     accountTrue = true;
                 }
