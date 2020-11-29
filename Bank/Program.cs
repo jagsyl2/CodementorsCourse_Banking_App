@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using BankTransfers.BusinessLayer;
+using BankTransfers.DataLayer.Models;
+
 
 namespace Bank
 {
@@ -7,11 +10,11 @@ namespace Bank
     {
         static void Main(string[] args)
         {
-            new Program().Run();       
+            new Program().Run();
         }
 
-        private Finances _finances = new Finances();
-        private TransfersHistory _transfersHistory = new TransfersHistory();
+        private AccountsService _accountsService = new AccountsService();
+        private TransfersService _transfersService = new TransfersService();
             
         private void Run()
         {
@@ -49,7 +52,7 @@ namespace Bank
                         CheckTheHistoryOfTransfers();
                         break;
                     case 6:
-                        QuitTheProgram(userChoice, exit=true);
+                        exit=true;
                         break;
                     default:
                         Console.WriteLine("Unknown option");
@@ -58,39 +61,32 @@ namespace Bank
             } while (!exit);
         }
 
-        private void QuitTheProgram(int userChoice, bool exit)
-        {
-            if (userChoice == 6)
-            {
-                exit = true;
-            }
-        }
-
         private void CheckTheHistoryOfTransfers()
         {
+            List<Transfer> history = _transfersService.GetAllTransfers();
+            if (history.Count == 0)
+            {
+                Console.WriteLine("No transfers has been sent");
+            }
+            
             Console.WriteLine("The history of transfers:");
-            List <Transfer> history = _transfersHistory.GetAllTransfers();
+            
             foreach (Transfer transfers in history)
             {                                                                           
                 string text = @$"Date of the transfer:  {transfers.DateOfTheTransfer}
                                  GUID source account:   {transfers.SourceAccount}
                                  GUID target account:   {transfers.TargetAccount}
-                                 Transfer Title:        {transfers.TransferTitle}  
-                                 Transfers Amount:      {transfers.TransferAmount}
+                                 Transfer Title:        {transfers.Title}  
+                                 Transfers Amount:      {transfers.Amount}
                                  Typ of transfer:       {transfers.TypOfTransfer}";
                 Console.WriteLine(text);
                 Console.WriteLine();
-            }
-
-            if (history.Count == 0)
-            {
-                Console.WriteLine("No transfers has been sent");
             }
         }
 
         private void OutgoingTransfer()
         {
-            List<Account> outgoingTransfers = _finances.GetAllAccounts();
+            List<Account> outgoingTransfers = _accountsService.GetAllAccounts();
             if (outgoingTransfers.Count < 1)
             {
                 Console.WriteLine("It is not possible to make an outgoing transfer - minimum 1 accounts needed");
@@ -117,8 +113,8 @@ namespace Bank
 
             Transfer newTransferOut = new Transfer()
             {
-                TransferTitle = title,
-                TransferAmount = amount,
+                Title = title,
+                Amount = amount,
                 DateOfTheTransfer = DateTime.Now,
                 TypOfTransfer = "External transfer",
                 SourceAccount = sourceAccount,
@@ -128,18 +124,18 @@ namespace Bank
 
             MakeAnOutgoingTransfer(accountNameFrom, amount);
 
-            _transfersHistory.AddTransfer(newTransferOut);
+            _transfersService.AddTransfer(newTransferOut);
         }
 
         private void MakeAnOutgoingTransfer(string account, double amount)
         {
-            List<Account> outgoingTransfer = _finances.GetAllAccounts();
+            List<Account> outgoingTransfer = _accountsService.GetAllAccounts();
             for (int i = 0; i < outgoingTransfer.Count; i++)
             {
-                if (outgoingTransfer[i].AccountName == account)
+                if (outgoingTransfer[i].Name == account)
                 {
-                    outgoingTransfer[i].AccountBalance = outgoingTransfer[i].AccountBalance - amount;
-                    Console.WriteLine($"Account: \"{outgoingTransfer[i].AccountName}\" - Balance: {outgoingTransfer[i].AccountBalance}$");
+                    outgoingTransfer[i].Balance = outgoingTransfer[i].Balance - amount;
+                    Console.WriteLine($"Account: \"{outgoingTransfer[i].Name}\" - Balance: {outgoingTransfer[i].Balance}$");
                 }
             }
         }
@@ -157,7 +153,7 @@ namespace Bank
 
         private void DomesticTransfer()
         {
-            List<Account> numberOfAccounts = _finances.GetAllAccounts();
+            List<Account> numberOfAccounts = _accountsService.GetAllAccounts();
             if (numberOfAccounts.Count < 2)
             {
                 Console.WriteLine("It is not possible to make a domestic transfer - minimum 2 accounts needed");
@@ -188,8 +184,8 @@ namespace Bank
 
             Transfer newTransfer = new Transfer()
             {
-                TransferTitle = title,
-                TransferAmount = amount,
+                Title = title,
+                Amount = amount,
                 DateOfTheTransfer = DateTime.Now,
                 TypOfTransfer = "Internal transfer",
                 SourceAccount = sourceAccount,
@@ -199,7 +195,7 @@ namespace Bank
 
             MakeADomesticTransfer(accountNameFrom, accountNameTo, amount);
 
-            _transfersHistory.AddTransfer(newTransfer);
+            _transfersService.AddTransfer(newTransfer);
         }
 
         private string EnterYourAccountName(List<Account> list, string instruction, string accountCredit, bool debitEqualCredit = false)
@@ -241,9 +237,9 @@ namespace Bank
         {
             for (int i = 0; i < numberOfAccounts.Count; i++)
             {
-                if (accountNameFrom == numberOfAccounts[i].AccountName)
+                if (accountNameFrom == numberOfAccounts[i].Name)
                 {
-                    sourceAccount = numberOfAccounts[i].AccountNumber;
+                    sourceAccount = numberOfAccounts[i].Number;
                 }
             }
             return sourceAccount;
@@ -258,7 +254,7 @@ namespace Bank
                 goodAmount = true;
                 for (int i = 0; i < numberOfAccounts.Count; i++)
                 {
-                    if (numberOfAccounts[i].AccountName == accountNameFrom && (amount <= 0 || amount > numberOfAccounts[i].AccountBalance))
+                    if (numberOfAccounts[i].Name == accountNameFrom && (amount <= 0 || amount > numberOfAccounts[i].Balance))
                     {
                         Console.WriteLine("Wrong amount - try again...");
                         Console.WriteLine();
@@ -273,7 +269,7 @@ namespace Bank
         {
             for (int i = 0; i < list.Count; i++)
             {
-                if (accountName == list[i].AccountName)
+                if (accountName == list[i].Name)
                 {
                     accountTrue = true;
                 }
@@ -289,19 +285,19 @@ namespace Bank
 
         private void MakeADomesticTransfer(string accountNameFrom, string accountNameTo, double amount)
         {
-            List <Account> domesticTransfer = _finances.GetAllAccounts();
+            List <Account> domesticTransfer = _accountsService.GetAllAccounts();
             for (int i= 0; i< domesticTransfer.Count; i++) 
             {
-                if (accountNameFrom == domesticTransfer[i].AccountName)
+                if (accountNameFrom == domesticTransfer[i].Name)
                 {
-                    domesticTransfer[i].AccountBalance = domesticTransfer[i].AccountBalance - amount;
-                    Console.WriteLine($"Account: \"{domesticTransfer[i].AccountName}\" - Balance: {domesticTransfer[i].AccountBalance}$");
+                    domesticTransfer[i].Balance = domesticTransfer[i].Balance - amount;
+                    Console.WriteLine($"Account: \"{domesticTransfer[i].Name}\" - Balance: {domesticTransfer[i].Balance}$");
                 }
                 
-                if (accountNameTo == domesticTransfer[i].AccountName)
+                if (accountNameTo == domesticTransfer[i].Name)
                 {
-                    domesticTransfer[i].AccountBalance = domesticTransfer[i].AccountBalance + amount;
-                    Console.WriteLine($"Account: \"{domesticTransfer[i].AccountName}\" - Balance: {domesticTransfer[i].AccountBalance}$");
+                    domesticTransfer[i].Balance = domesticTransfer[i].Balance + amount;
+                    Console.WriteLine($"Account: \"{domesticTransfer[i].Name}\" - Balance: {domesticTransfer[i].Balance}$");
                     Console.WriteLine();
                 }
             }
@@ -320,19 +316,20 @@ namespace Bank
 
         private void PrintAccounts()
         {
-            Console.WriteLine("Your accounts balance:");
-            List<Account> yourAccounts = _finances.GetAllAccounts();
-            for (int i = 0; i < yourAccounts.Count; i++)
-            {
-                string text = $"Account: \"{yourAccounts[i].AccountName}\" - Balance: {yourAccounts[i].AccountBalance}$ - Account Number: {yourAccounts[i].AccountNumber}";
-                Console.WriteLine(text);
-            }
-            
+            List<Account> yourAccounts = _accountsService.GetAllAccounts();
             if (yourAccounts.Count == 0)
             {
                 Console.WriteLine("No accounts has been created");
                 Console.WriteLine();
-            } 
+            }
+
+            Console.WriteLine("Your accounts balance:");
+
+            for (int i = 0; i < yourAccounts.Count; i++)
+            {
+                string text = $"Account: \"{yourAccounts[i].Name}\" - Balance: {yourAccounts[i].Balance}$ - Account Number: {yourAccounts[i].Number}";
+                Console.WriteLine(text);
+            }
         }
 
         private void CreateAccount()
@@ -341,7 +338,7 @@ namespace Bank
 
             string accountName;
             bool createAccount;
-            List<Account> sprawdzenie = _finances.GetAllAccounts();
+            List<Account> sprawdzenie = _accountsService.GetAllAccounts();
             do
             {
                 accountName = GetTextFromUser("Provide account name");
@@ -351,7 +348,7 @@ namespace Bank
 
                 for (int i = 0; i < sprawdzenie.Count; i++)
                 {
-                    if (accountName == sprawdzenie[i].AccountName)
+                    if (accountName == sprawdzenie[i].Name)
                     {
                         Console.WriteLine("The name exist - try again...");
                         Console.WriteLine();
@@ -363,15 +360,15 @@ namespace Bank
             
             Account newAccount = new Account()
             {
-                AccountName = accountName,
-                AccountNumber = GenerateGuidToUser(),
-                AccountBalance = 1000,
+                Name = accountName,
+                Number = GenerateGuidToUser(),
+                Balance = 1000,
             };
             
-            Console.WriteLine($"The opening balance of the account: {newAccount.AccountBalance}$");
+            Console.WriteLine($"The opening balance of the account: {newAccount.Balance}$");
 
-            _finances.AddAccounts(newAccount);
-            Console.WriteLine($"\nAccount \"{newAccount.AccountName}\" added successfully");
+            _accountsService.AddAccount(newAccount);
+            Console.WriteLine($"\nAccount \"{newAccount.Name}\" added successfully");
         }
 
         private bool CheckingIfIsNullOrWhiteSpace(string accountName, bool createAccount, string message)

@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace Bank
+namespace BankTransfers.DataLayer.Models
 {
-    class Transfer
+    public class Transfer
     {
-        public string TransferTitle;
-        public double TransferAmount;
+        public string Title;
+        public double Amount;
         public DateTime DateOfTheTransfer;
         public string TypOfTransfer;
         public Guid SourceAccount;
