@@ -7,15 +7,21 @@ namespace BankTransfers.BusinessLayer
 {
     public class TransfersService
     {
-        private TransfersHistory _transfersHistory = new TransfersHistory();
         public void AddTransfer(Transfer transfer)
         {
-            _transfersHistory.Transfers.Add(transfer);
+            using (var context = new BankDbContex())
+            {
+                context.Transfers.Add(transfer);
+                context.SaveChanges();
+            }
         }
 
         public List<Transfer> GetAllTransfers()
         {
-            return _transfersHistory.Transfers.ToList();
+            using (var context = new BankDbContex())
+            {
+                return context.Transfers.ToList();
+            }
         }
     }
 }

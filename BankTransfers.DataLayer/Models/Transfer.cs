@@ -4,11 +4,12 @@ namespace BankTransfers.DataLayer.Models
 {
     public class Transfer
     {
-        public string Title;
-        public double Amount;
-        public DateTime DateOfTheTransfer;
-        public string TypOfTransfer;
-        public Guid SourceAccount;
-        public Guid TargetAccount;
+        public int Id { get; set; }
+        public string Title { get; set; }
+        public double Amount { get; set; }
+        public DateTime DateOfTheTransfer { get; set; }
+        public string TypOfTransfer { get; set; }
+        public Guid SourceAccount { get; set; }
+        public Guid TargetAccount { get; set; }
     }
 }

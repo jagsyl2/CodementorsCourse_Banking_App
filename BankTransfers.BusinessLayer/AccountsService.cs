@@ -7,16 +7,20 @@ namespace BankTransfers.BusinessLayer
 {
     public class AccountsService
     {
-        private ClientAccounts _clientAccounts = new ClientAccounts();
-
         public void AddAccount(Account account)
         {
-            _clientAccounts.BankAccounts.Add(account);
+            using (var context = new BankDbContex())
+            {
+                context.Accounts.Add(account);
+                context.SaveChanges();
+            }
         }
         public List<Account> GetAllAccounts()
         {
-            return _clientAccounts.BankAccounts.ToList();
-
+            using (var context = new BankDbContex())
+            {
+                return context.Accounts.ToList();
+            }
         }
     }
 }

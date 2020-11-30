@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bank", "Bank\Bank.csproj", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BankTransfers.DataLayer", "BankTransfers.DataLayer\BankTransfers.DataLayer.csproj", "{1A5405E5-5578-4CBD-BEB0-98F372B6A14F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BankTransfers.BusinessLayer", "BankTransfers.BusinessLayer\BankTransfers.BusinessLayer.csproj", "{C54E2502-3ABE-49A4-8B07-61DACEC18C13}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BankTransfers.BusinessLayer", "BankTransfers.BusinessLayer\BankTransfers.BusinessLayer.csproj", "{C54E2502-3ABE-49A4-8B07-61DACEC18C13}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -4,9 +4,10 @@ namespace BankTransfers.DataLayer.Models
 {
     public class Account
     {
-        public string Name;
-        public Guid Number;
-        public double Balance;
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public Guid Number { get; set; }
+        public double Balance { get; set; }
     }
 }
 

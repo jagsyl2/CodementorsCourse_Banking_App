@@ -15,9 +15,11 @@ namespace Bank
 
         private AccountsService _accountsService = new AccountsService();
         private TransfersService _transfersService = new TransfersService();
-            
+        private DatabaseManagmentService _databaseManagmentService = new DatabaseManagmentService();
         private void Run()
         {
+            _databaseManagmentService.EnsureDatabaseCreation();
+
             bool exit = false;
             do
             {
