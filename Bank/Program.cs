@@ -11,15 +11,90 @@ namespace Bank
         static void Main(string[] args)
         {
             new Program().Run();
+        
         }
 
         private AccountsService _accountsService = new AccountsService();
+        private CustomersService _customersService = new CustomersService();
         private TransfersService _transfersService = new TransfersService();
         private DatabaseManagmentService _databaseManagmentService = new DatabaseManagmentService();
+        private IoHelper _ioHelper = new IoHelper();
+        
+
         private void Run()
         {
             _databaseManagmentService.EnsureDatabaseCreation();
 
+            do
+            {
+                Console.WriteLine();
+                Console.WriteLine("Choose action:");
+                Console.WriteLine("Press 1 to Sign In");
+                Console.WriteLine("Press 2 to Register");
+
+                int userChoice = _ioHelper.GetIntFromUser("Select number");
+
+                switch (userChoice)
+                {
+                    case 1:
+                        SignIn();
+                        break;
+                    case 2:
+                        Register();
+                        break;
+                    default:
+                        Console.WriteLine("Unknown option");
+                        break;
+                }
+            } while (true);
+        }
+
+
+        private void SignIn()
+        {
+            var eMail = _ioHelper.GetTextFromUser("Enter your e-mail");
+            var password = _ioHelper.GetTextFromUser("Enter password");
+            
+            bool success = _customersService.CheckingCustomerSignIn(eMail, password);
+            if (success == false)
+            {
+                Console.WriteLine("Login failed. Try again...");
+                return;
+            }
+                Console.WriteLine("You are logged in!");
+                Menu();
+            
+
+        }
+
+
+
+        private void Register()
+        {
+            var eMail = _ioHelper.GetEMailFromUser("Enter your e-mail");
+            var phoneNumber = _ioHelper.GetPhoneNumberFromUser("Enter phone number");
+            var password = _ioHelper.GetTextFromUser("Enter password");
+
+            var newCustomer = new Customer
+            {
+                EMail = eMail,
+                PhoneNumber = phoneNumber,
+                Password = password,
+            };
+
+            bool success = _customersService.CheckingIfANewCustomerIsRegistering(eMail);
+            if (success == true)
+            {
+                Console.WriteLine("The given email address exists. Try again...");
+                return;
+            }
+            
+            _customersService.AddCustomer(newCustomer);
+            Console.WriteLine("Registration is correct!");
+        }
+
+        private void Menu()
+        {                
             bool exit = false;
             do
             {
@@ -32,7 +107,7 @@ namespace Bank
                 Console.WriteLine("Press 5 to Check the history of transfers");
                 Console.WriteLine("Press 6 to exit");
 
-                int userChoice = GetIntFromUser("Select number");
+                int userChoice = _ioHelper.GetIntFromUser("Select number");
                 
                 Console.WriteLine();
 
@@ -102,7 +177,7 @@ namespace Bank
             string debitMessage = "The account from which the funds will be withdrawn - enter your debit account name";
             string accountNameFrom = EnterYourAccountName(outgoingTransfers, debitMessage, null);
 
-            Guid targetAccount = GetGuidFromUser("The number of GUID");
+            Guid targetAccount = _ioHelper.GetGuidFromUser("The number of GUID");
 
             double amount;
             GetAmountFromUser(outgoingTransfers, accountNameFrom, out amount);
@@ -142,16 +217,7 @@ namespace Bank
             }
         }
 
-        private Guid GetGuidFromUser(string message)
-        {
-            Guid guid;
-            while (!Guid.TryParse(GetTextFromUser(message), out guid))
-            {
-                Console.WriteLine("Incorrect number - try again...");
-                Console.WriteLine();
-            }
-            return guid;
-        }
+
 
         private void DomesticTransfer()
         {
@@ -206,7 +272,7 @@ namespace Bank
             bool accountTo = false;
             do
             {
-                accountName = GetTextFromUser(instruction);
+                accountName = _ioHelper.GetTextFromUser(instruction);
 
                 string message = "There is no such account - try again...";
                 accountTo = CheckingIfTheAccountNameIsOnTheList(list, accountName, accountTo, message);
@@ -227,10 +293,10 @@ namespace Bank
             bool correctTitle;
             do
             {
-                title = GetTextFromUser("Transfer title");
+                title = _ioHelper.GetTextFromUser("Transfer title");
                 correctTitle = true;
                 string message = "Incorrect title - try again...";
-                correctTitle = CheckingIfIsNullOrWhiteSpace(title, correctTitle, message);
+                correctTitle = _ioHelper.CheckingIfIsNullOrWhiteSpace(title, correctTitle, message);
             }
             while (correctTitle == false);
         }
@@ -252,7 +318,7 @@ namespace Bank
             bool goodAmount;
             do
             {
-                amount = GetDoubleFromUser("Transfer amount");
+                amount = _ioHelper.GetDoubleFromUser("Transfer amount");
                 goodAmount = true;
                 for (int i = 0; i < numberOfAccounts.Count; i++)
                 {
@@ -305,16 +371,7 @@ namespace Bank
             }
         }
 
-        private double GetDoubleFromUser(string message)
-        {
-            double amount;
-            while (!double.TryParse(GetTextFromUser(message), out amount))
-            {
-                Console.WriteLine("Negative value - try again...");
-                Console.WriteLine();
-            }
-            return amount; 
-        }
+
 
         private void PrintAccounts()
         {
@@ -340,17 +397,17 @@ namespace Bank
 
             string accountName;
             bool createAccount;
-            List<Account> sprawdzenie = _accountsService.GetAllAccounts();
+            List<Account> AllAccounts = _accountsService.GetAllAccounts();
             do
             {
-                accountName = GetTextFromUser("Provide account name");
+                accountName = _ioHelper.GetTextFromUser("Provide account name");
                 createAccount = true;
                 string message = "Incorrect name - try again...";
-                createAccount = CheckingIfIsNullOrWhiteSpace(accountName, createAccount, message);
+                createAccount = _ioHelper.CheckingIfIsNullOrWhiteSpace(accountName, createAccount, message);
 
-                for (int i = 0; i < sprawdzenie.Count; i++)
+                for (int i = 0; i < AllAccounts.Count; i++)
                 {
-                    if (accountName == sprawdzenie[i].Name)
+                    if (accountName == AllAccounts[i].Name)
                     {
                         Console.WriteLine("The name exist - try again...");
                         Console.WriteLine();
@@ -363,7 +420,7 @@ namespace Bank
             Account newAccount = new Account()
             {
                 Name = accountName,
-                Number = GenerateGuidToUser(),
+                Number = _ioHelper.GenerateGuidToUser(),
                 Balance = 1000,
             };
             
@@ -373,39 +430,6 @@ namespace Bank
             Console.WriteLine($"\nAccount \"{newAccount.Name}\" added successfully");
         }
 
-        private bool CheckingIfIsNullOrWhiteSpace(string accountName, bool createAccount, string message)
-        {
-            if (string.IsNullOrWhiteSpace(accountName))
-            {
-                Console.WriteLine(message);
-                Console.WriteLine();
-                createAccount = false;
-            }
-            return createAccount;
-        }
 
-        private Guid GenerateGuidToUser()
-        {
-            Guid g = Guid.NewGuid();
-            Console.WriteLine($"Your account number: {g}");
-            return g;
-        }
-
-        private int GetIntFromUser(string message)
-        {
-            int number;
-            while (!int.TryParse(GetTextFromUser(message), out number))
-            {
-                Console.WriteLine("Incorrect option - try again...");
-                Console.WriteLine();
-            }
-            return number;
-        }
-
-        private string GetTextFromUser(string message)
-        {
-            Console.Write($"{message}: ");
-            return Console.ReadLine();
-        }
     }
 }

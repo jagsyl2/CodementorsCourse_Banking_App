@@ -7,6 +7,9 @@ namespace BankTransfers.DataLayer
     {
         public DbSet<Account> Accounts { get; set; }
         public DbSet<Transfer> Transfers { get; set; }
+        public DbSet<Customer> Customers { get; set; }
+
+
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
