@@ -15,11 +15,22 @@ namespace BankTransfers.BusinessLayer
                 context.SaveChanges();
             }
         }
+
         public List<Account> GetAllAccounts()
         {
             using (var context = new BankDbContex())
             {
                 return context.Accounts.ToList();
+            }
+        }
+
+        public List<Account> GetCustomerAccounts(int customerId)
+        {
+            using (var context = new BankDbContex())
+            {
+                return context.Accounts
+                    .Where(account => customerId == account.CustomerId)
+                    .ToList();
             }
         }
     }

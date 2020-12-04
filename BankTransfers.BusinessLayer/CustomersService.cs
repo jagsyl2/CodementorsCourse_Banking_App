@@ -36,15 +36,12 @@ namespace BankTransfers.BusinessLayer
             }
         }
 
-        public bool CheckingCustomerSignIn(string eMail, string password)
+        public Customer GetCustomer(string eMail, string password)
         {
             using (var context = new BankDbContex())
             {
-                if (context.Customers.Any(customer => (customer.EMail == eMail && customer.Password == password)))
-                {
-                    return true;
-                }
-                return false;
+                return context.Customers
+                    .SingleOrDefault(customer => (customer.EMail == eMail && customer.Password == password));
             }
         }
     }

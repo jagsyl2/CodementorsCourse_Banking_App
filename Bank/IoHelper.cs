@@ -1,9 +1,21 @@
-﻿using System;
+﻿using BankTransfers.DataLayer.Models;
+using System;
+using System.Collections.Generic;
 
 namespace Bank
 {
     public class IoHelper
     {
+
+
+
+
+
+        public void PrintCustomerAccounts(Account account)
+        {
+            Console.WriteLine($"Number: {account.Id} - Account: \"{account.Name}\" - Balance: {account.Balance}$ - Account Number: {account.Number}");
+        }
+
         public Guid GetGuidFromUser(string message)
         {
             Guid guid;
@@ -24,15 +36,15 @@ namespace Bank
             }
             return amount;
         }
-        public bool CheckingIfIsNullOrWhiteSpace(string accountName, bool createAccount, string message)
+        public bool CheckingIfIsNullOrWhiteSpace(string accountName, bool isAccountNameCorrect)                    //namieszane!!!!!!!!!!!!!!!
         {
             if (string.IsNullOrWhiteSpace(accountName))
             {
-                Console.WriteLine(message);
+                Console.WriteLine("Incorrect name - try again...");
                 Console.WriteLine();
-                createAccount = false;
+                isAccountNameCorrect = false;
             }
-            return createAccount;
+            return isAccountNameCorrect;
         }
 
         public Guid GenerateGuidToUser()

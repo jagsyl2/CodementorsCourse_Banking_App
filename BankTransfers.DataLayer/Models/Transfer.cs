@@ -5,6 +5,8 @@ namespace BankTransfers.DataLayer.Models
     public class Transfer
     {
         public int Id { get; set; }
+        public int CustomerId { get; set; }
+        public Customer customer { get; set; }
         public string Title { get; set; }
         public double Amount { get; set; }
         public DateTime DateOfTheTransfer { get; set; }
