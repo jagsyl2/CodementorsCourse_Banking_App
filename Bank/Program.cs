@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using BankTransfers.BusinessLayer;
 using BankTransfers.DataLayer.Models;
 
@@ -44,39 +43,33 @@ namespace Bank
         {
             Console.WriteLine("Choose option:");
 
-            //var addCustomerItem = new MenuItem                                        //do aktualizacji!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            //{
-            //    Keys = 1,
-            //    Action = SignIn,
-            //    Description = "Sign In"
-            //};
-            //_menu.AddOption(addCustomerItem);
-            
             _registerMenu.AddOption(new MenuItem { Keys = 1, Action = SignIn,   Description = "Sign In" });
             _registerMenu.AddOption(new MenuItem { Keys = 2, Action = Register, Description = "Register" });
         }
 
         private void SignIn()
         {
+            Console.WriteLine();
             var eMail = _ioHelper.GetTextFromUser("Enter your e-mail");
             var password = _ioHelper.GetTextFromUser("Enter password");
             
             var customer = _customersService.GetCustomer(eMail, password);
             if (customer == null)
             {
-                Console.WriteLine("Login failed. Try again...");
+                _ioHelper.WriteString("Login failed. Try again...");
                 return;
             }
+
+            _ioHelper.WriteString("You are logged in!");
             
-            Console.WriteLine("You are logged in!");
-            
-            _customer = customer;    
+            _customer = customer;
             Menu();
         }
 
         private void Register()
         {
-            var eMail = _ioHelper.GetEMailFromUser("Enter your e-mail");
+            Console.WriteLine();
+            var eMail = GetEMailFromUser("Enter your e-mail");
             var phoneNumber = _ioHelper.GetPhoneNumberFromUser("Enter phone number");
             var password = _ioHelper.GetTextFromUser("Enter password");
 
@@ -87,15 +80,37 @@ namespace Bank
                 Password = password,
             };
 
-            var success = _customersService.CheckingIfANewCustomerIsRegistering(eMail);
-            if (success == true)
-            {
-                Console.WriteLine("The given email address exists. Try again...");
-                return;
-            }
-            
             _customersService.AddCustomer(newCustomer);
-            Console.WriteLine("Registration is correct!");
+            _ioHelper.WriteString("Registration is correct!");
+        }
+
+        public string GetEMailFromUser(string message)
+        {
+            string eMail;
+            bool validation;
+
+            do
+            {
+                eMail = _ioHelper.GetTextFromUser(message);
+                validation = true;
+
+                if (!(eMail).Contains("@"))
+                {
+                    _ioHelper.WriteString("Incorrect adress e-mail (must contain the @ sign). Try again...");
+
+                    validation = false;
+                    continue;
+                }
+                
+                if (_customersService.CheckingIfANewCustomerIsRegistering(eMail) == true)
+                {
+                    _ioHelper.WriteString("The given email address exists. Try again...");
+                    validation = false;
+                }
+            }
+            while (validation == false);
+
+            return eMail;
         }
 
         private void Menu()
@@ -129,11 +144,13 @@ namespace Bank
             var history = _transfersService.GetTransfers(_customer.Id);
             if (history.Count == 0)
             {
-                Console.WriteLine("No transfers has been sent");
+                Console.WriteLine();
+                _ioHelper.WriteString("No transfers has been sent");
                 return;
             }
-            
-            Console.WriteLine("The history of transfers:");
+
+            Console.WriteLine();
+            _ioHelper.WriteString("The history of transfers:");
             
             foreach (Transfer transfers in history)
             {                                                                           
@@ -143,9 +160,23 @@ namespace Bank
                                  Transfer Title:        {transfers.Title}  
                                  Transfers Amount:      {transfers.Amount}
                                  Typ of transfer:       {transfers.TypOfTransfer}";
-                Console.WriteLine(text);
-                Console.WriteLine();
+                _ioHelper.WriteString(text);
             }
+        }
+
+        private void PrintAccounts()
+        {
+            var customerAccounts = _accountsService.GetCustomerAccounts(_customer.Id);
+
+            if (customerAccounts.Count == 0)
+            {
+                Console.WriteLine();
+                _ioHelper.WriteString("No accounts has been created");
+                return;
+            }
+
+            PrintCustomerAccounts(customerAccounts);
+            Console.WriteLine();
         }
 
         private void OutgoingTransfer()
@@ -153,40 +184,17 @@ namespace Bank
             var customerAccounts = _accountsService.GetCustomerAccounts(_customer.Id);
             if (customerAccounts.Count < 1)
             {
-                Console.WriteLine("It is not possible to make an outgoing transfer - minimum 1 accounts needed");
+                Console.WriteLine();
+                _ioHelper.WriteString("It is not possible to make an outgoing transfer - minimum 1 accounts needed");
                 return;
             }
 
-            Console.WriteLine("Your accounts balance:");
-            foreach (var account in customerAccounts)
-            {
-                _ioHelper.PrintCustomerAccounts(account);
-            }
-
-            Console.WriteLine("Make an outgoing transfer:");
-            int sourceAccountId;
-            bool existAccounId;
-
-            do
-            {
-                sourceAccountId = _ioHelper.GetIntFromUser("Provide the source account number");
-                existAccounId = true;
-                
-                if (!customerAccounts.Any(account => account.Id == sourceAccountId))
-                {
-                    Console.WriteLine("Incorrect account Id!");
-                    existAccounId = false;
-                }
-            } 
-            while (existAccounId == false);
-
-            var sourceAccount = customerAccounts.First(account => sourceAccountId == account.Id);
-
-            var amount = GetAmountFromUser(sourceAccount);
-
+            PrintCustomerAccounts(customerAccounts);
+            
+            var sourceAccount = _ioHelper.GetAccountFromUser("Make an outgoing transfer:", customerAccounts);
+            var amount = _ioHelper.GetAmountFromUser(sourceAccount);
             var targetGuid = _ioHelper.GetGuidFromUser("Provide the target account number (the number of GUID)");
-
-            var title = GetTheTitleOfTransfer();
+            var title = CheckingIfItIsCorrect("Transfer title");
 
             Transfer newTransfer = new Transfer()
             {
@@ -198,17 +206,10 @@ namespace Bank
                 SourceAccount = sourceAccount.Number,
                 TargetAccount = targetGuid,
             };
-            Console.WriteLine($"Date of the transfer: {newTransfer.DateOfTheTransfer}");
+            _ioHelper.WriteString($"Date of the transfer: {newTransfer.DateOfTheTransfer}");
 
-            var currentBalance = _transfersService.BalanceChangeOfTargetAccount(sourceAccountId, amount);
-
-            //Account a;
-            //foreach (var account in customerAccounts)
-            //{
-            //    customerAccounts.First(account => account.Id == sourceAccountId);
-               
-            //}
-            //Console.WriteLine($"Account: \"{account.Name}\" - Balance: {currentBalance}$");
+            var currentBalance = _transfersService.BalanceChangeOfSourceAccount(sourceAccount.Id, amount);
+            _ioHelper.WriteString($"Account: \"{sourceAccount.Name}\" - Balance: {currentBalance}$");
 
             _transfersService.AddTransfer(newTransfer);
         }
@@ -218,53 +219,17 @@ namespace Bank
             var customerAccounts = _accountsService.GetCustomerAccounts(_customer.Id);
             if (customerAccounts.Count < 2)
             {
-                Console.WriteLine("It is not possible to make a domestic transfer - minimum 2 accounts needed");
+                Console.WriteLine();
+                _ioHelper.WriteString("It is not possible to make a domestic transfer - minimum 2 accounts needed");
                 return;
             }
 
-            Console.WriteLine("Your accounts balance:");
-            foreach (var account in customerAccounts)
-            {
-                _ioHelper.PrintCustomerAccounts(account);
-            }
-            
-            Console.WriteLine("Make a domestic transfer:");
-            var sourceAccountId = _ioHelper.GetIntFromUser("Provide the source account number");
+            PrintCustomerAccounts(customerAccounts);
 
-            if (!customerAccounts.Any(account => account.Id == sourceAccountId))
-            {
-                Console.WriteLine("Incorrect account Id!");
-                return;
-            }
-
-            int targetAccountId;
-            bool correctAccountId;
-            do
-            {
-                correctAccountId = true;
-                targetAccountId = _ioHelper.GetIntFromUser("Provide the target account number");
-
-                if (!customerAccounts.Any(account => account.Id == targetAccountId))
-                {
-                    Console.WriteLine("Incorrect account Id!");
-                    correctAccountId = false;
-                    continue;
-                }
-
-                if (sourceAccountId == targetAccountId)
-                {
-                    Console.WriteLine("Same account selected - try again...");
-                    correctAccountId = false;
-                }
-            }
-            while (correctAccountId == false);
-
-            var amount = GetAmountFromUser(customerAccounts, sourceAccountId);
-
-            var sourceAccount = GetGuidNumber(customerAccounts, sourceAccountId);
-            var targetAccount = GetGuidNumber(customerAccounts, targetAccountId);
-
-            var title = GetTheTitleOfTransfer();
+            var sourceAccount = _ioHelper.GetAccountFromUser("Make a domestic transfer:", customerAccounts);
+            var targetAccount = _ioHelper.GetAccountFromUser(customerAccounts, sourceAccount.Id);
+            var amount = _ioHelper.GetAmountFromUser(sourceAccount);
+            var title = CheckingIfItIsCorrect("Transfer title");
 
             Transfer newTransfer = new Transfer()
             {
@@ -273,114 +238,35 @@ namespace Bank
                 Amount = amount,
                 DateOfTheTransfer = DateTime.Now,
                 TypOfTransfer = "Internal transfer",
-                SourceAccount = sourceAccount,
-                TargetAccount = targetAccount,
+                SourceAccount = sourceAccount.Number,
+                TargetAccount = targetAccount.Number,
             };
-            Console.WriteLine($"Date of the transfer: {newTransfer.DateOfTheTransfer}");
+            _ioHelper.WriteString($"Date of the transfer: {newTransfer.DateOfTheTransfer}");
 
-            var currentBalanceSource = _transfersService.BalanceChangeOfSourceAccount(sourceAccountId, amount);
-            foreach (var account in customerAccounts)
-            {
-                customerAccounts.First(account => account.Id == sourceAccountId);
-                Console.WriteLine($"Account: \"{account.Name}\" - Balance: {currentBalanceSource}$");
-            }
+            var currentBalanceSource = _transfersService.BalanceChangeOfSourceAccount(sourceAccount.Id, amount);
+            Console.WriteLine($"Account: \"{sourceAccount.Name}\" - Balance: {currentBalanceSource}$");
 
-            var currentBalanceTarget = _transfersService.BalanceChangeOfTargetAccount(targetAccountId, amount);
-            foreach (var account in customerAccounts)
-            {
-                customerAccounts.First(account => account.Id == targetAccountId);
-                Console.WriteLine($"Account: \"{account.Name}\" - Balance: {currentBalanceTarget}$");
-            }
+            var currentBalanceTarget = _transfersService.BalanceChangeOfTargetAccount(targetAccount.Id, amount);
+            _ioHelper.WriteString($"Account: \"{targetAccount.Name}\" - Balance: {currentBalanceTarget}$");
 
             _transfersService.AddTransfer(newTransfer);
         }
 
-        public double GetAmountFromUser(Account account)
+        private void PrintCustomerAccounts(List<Account> customerAccounts)
         {
-            bool correctAmount;
-            double amount;
-            do
-            {
-                amount = _ioHelper.GetDoubleFromUser("Transfer amount");
-                correctAmount = true;
-
-                if (amount <= 0 || amount > account.Balance)
-                {
-                    Console.WriteLine("Wrong amount (below 0$ or insufficient funds on the account) - try again...");
-                    correctAmount = false;
-                }
-            }
-            while (correctAmount == false);
-
-            return amount;
-        }
-
-        private Guid GetGuidNumber(Account account)
-        {
-            Guid number = default(Guid);
-            foreach (var account in accounts)
-            {
-                number = accounts
-                    .Where(account => account.Id == accountId)
-                    .Select(account => account.Number)
-                    .First();
-            }
-            return number;
-        }
-
-        private string GetTheTitleOfTransfer()
-        {
-            string title;
-            bool correctTitle;
-            do
-            {
-                title = _ioHelper.GetTextFromUser("Transfer title");
-                correctTitle = true;
-                correctTitle = _ioHelper.CheckingIfIsNullOrWhiteSpace(title, correctTitle);
-            }
-            while (correctTitle == false);
-
-            while (!)
-            {
-
-            }
-
-            return title;
-        }
-
-        private void PrintAccounts()
-        {
-            var customerAccounts = _accountsService.GetCustomerAccounts(_customer.Id);
-
-            if (customerAccounts.Count == 0)
-            {
-                Console.WriteLine("No accounts has been created");
-                Console.WriteLine();
-            }
-
+            Console.WriteLine();
             Console.WriteLine("Your accounts balance:");
-
-            for (int i = 0; i < customerAccounts.Count; i++)
+            foreach (var account in customerAccounts)
             {
-                var text = ($"Number: {customerAccounts[i].Id} - Account: \"{customerAccounts[i].Name}\" - Balance: {customerAccounts[i].Balance}$ - Account Number: {customerAccounts[i].Number}");
-                Console.WriteLine(text);
+                _ioHelper.PrintAccount(account);
             }
         }
 
         private void CreateAccount()
         {
+            Console.WriteLine();
             Console.WriteLine("Create Account:");
-
-            string accountName;
-            bool isAccountNameCorrect;
-
-            do
-            {
-                accountName = _ioHelper.GetTextFromUser("Provide account name");
-                isAccountNameCorrect = true;
-                isAccountNameCorrect = _ioHelper.CheckingIfIsNullOrWhiteSpace(accountName, isAccountNameCorrect);
-            }
-            while (isAccountNameCorrect == false);
+            var accountName = CheckingIfItIsCorrect("Provide account name");
 
             Account newAccount = new Account()
             {
@@ -389,11 +275,23 @@ namespace Bank
                 Number = _ioHelper.GenerateGuidToUser(),
                 Balance = 1000,
             };
-            
-            Console.WriteLine($"The opening balance of the account: {newAccount.Balance}$");            //moge o to pytac czy siegam do bazy danych??
+
+            Console.WriteLine($"The opening balance of the account: {newAccount.Balance}$");
 
             _accountsService.AddAccount(newAccount);
-            Console.WriteLine($"\nAccount \"{newAccount.Name}\" added successfully");
+            _ioHelper.WriteString($"\nAccount \"{newAccount.Name}\" added successfully");
+        }
+
+        private string CheckingIfItIsCorrect(string message)
+        {
+            string title;
+            do
+            {
+                title = _ioHelper.GetTextFromUser(message);
+            }
+            while (_ioHelper.CheckingIfIsNullOrWhiteSpace(title));
+
+            return title;
         }
     }
 }

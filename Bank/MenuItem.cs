@@ -1,5 +1,4 @@
-﻿using BankTransfers.DataLayer.Models;
-using System;
+﻿using System;
 
 namespace Bank
 {

@@ -1,7 +1,5 @@
-﻿using BankTransfers.DataLayer.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Bank
 {
@@ -24,12 +22,13 @@ namespace Bank
             if (!_options.ContainsKey(optionKey))
             {
                 Console.WriteLine("Option number does not exists. Try again...");
+                Console.WriteLine();
                 return;
             }
-            var item = _options[optionKey];
-            item.Action();                                                           /////skumać to!!!!!!!!!!!!!!!!!!!!!!! 
-        }
 
+            var item = _options[optionKey];
+            item.Action(); 
+        }
 
         public void PrintAvailableOptions()
         {

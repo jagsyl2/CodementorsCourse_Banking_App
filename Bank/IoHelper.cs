@@ -1,17 +1,84 @@
 ﻿using BankTransfers.DataLayer.Models;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Bank
 {
     public class IoHelper
     {
+        public double GetAmountFromUser(Account account)
+        {
+            bool correctAmount;
+            double amount;
+            do
+            {
+                amount = GetDoubleFromUser("Transfer amount");
+                correctAmount = true;
 
+                if (amount <= 0 || amount > account.Balance)
+                {
+                    WriteString("Wrong amount (below 0$ or insufficient funds on the account) - try again...");
+                    correctAmount = false;
+                }
+            }
+            while (correctAmount == false);
 
+            return amount;
+        }
 
+        public Account GetAccountFromUser(string message, List<Account> customerAccounts)
+        {
+            WriteString(message);
+            bool existAccounId;
+            int sourceAccountId;
 
+            do
+            {
+                sourceAccountId = GetIntFromUser("Provide the source account number");
+                existAccounId = true;
 
-        public void PrintCustomerAccounts(Account account)
+                if (!customerAccounts.Any(account => account.Id == sourceAccountId))
+                {
+                    WriteString("Incorrect account Id!");
+                    existAccounId = false;
+                }
+            }
+            while (existAccounId == false);
+
+            var sourceAccount = customerAccounts.First(account => sourceAccountId == account.Id);
+            return sourceAccount;
+        }
+
+        public Account GetAccountFromUser(List<Account> customerAccounts, int sourceAccountId)
+        {
+            bool existAccounId;
+            int targetAccountId;
+
+            do
+            {
+                targetAccountId = GetIntFromUser("Provide the target account number");
+                existAccounId = true;
+
+                if (!customerAccounts.Any(account => account.Id == targetAccountId))
+                {
+                    WriteString("Incorrect account Id!");
+                    existAccounId = false;
+                }
+
+                if (sourceAccountId == targetAccountId)
+                {
+                    WriteString("Same account selected - try again...");
+                    existAccounId = false;
+                }
+            }
+            while (existAccounId == false);
+
+            var targetAccount = customerAccounts.First(account => targetAccountId == account.Id);
+            return targetAccount;
+        }
+
+        public void PrintAccount(Account account)
         {
             Console.WriteLine($"Number: {account.Id} - Account: \"{account.Name}\" - Balance: {account.Balance}$ - Account Number: {account.Number}");
         }
@@ -21,30 +88,29 @@ namespace Bank
             Guid guid;
             while (!Guid.TryParse(GetTextFromUser(message), out guid))
             {
-                Console.WriteLine("Incorrect number - try again...");
-                Console.WriteLine();
+                WriteString("Incorrect number - try again...");
             }
             return guid;
         }
+
         public double GetDoubleFromUser(string message)
         {
             double amount;
             while (!double.TryParse(GetTextFromUser(message), out amount))
             {
-                Console.WriteLine("Negative value - try again...");
-                Console.WriteLine();
+                WriteString("Negative value - try again...");
             }
             return amount;
         }
-        public bool CheckingIfIsNullOrWhiteSpace(string accountName, bool isAccountNameCorrect)                    //namieszane!!!!!!!!!!!!!!!
+
+        public bool CheckingIfIsNullOrWhiteSpace(string accountName)
         {
             if (string.IsNullOrWhiteSpace(accountName))
             {
-                Console.WriteLine("Incorrect name - try again...");
-                Console.WriteLine();
-                isAccountNameCorrect = false;
+                WriteString("Incorrect name - try again...");
+                return true;
             }
-            return isAccountNameCorrect;
+            return false;
         }
 
         public Guid GenerateGuidToUser()
@@ -59,8 +125,7 @@ namespace Bank
             int number;
             while (!int.TryParse(GetTextFromUser(message), out number))
             {
-                Console.WriteLine("Incorrect option - try again...");
-                Console.WriteLine();
+                WriteString("Incorrect option - try again...");
             }
             return number;
         }
@@ -80,27 +145,17 @@ namespace Bank
             {
                 phoneNumber = GetIntFromUser(message);
                 validation = phoneNumber.ToString().Length == 9;
-                Console.WriteLine(validation ? "" : "Incorrect phone number. Try again...");
+                Console.WriteLine(validation ? "" : "Incorrect phone number (must contain 9 digits). Try again...");
             }
             while (validation == false);
 
             return phoneNumber;
         }
 
-        public string GetEMailFromUser(string message)
+        public void WriteString (string message)
         {
-            string eMail;
-            bool validation;
-
-            do
-            {
-                eMail = GetTextFromUser(message);
-                validation = (eMail).Contains("@");
-                Console.WriteLine(validation ? "" : "Incorrect adress e-mail. Try again..."  ); 
-            }
-            while (validation == false);
-
-            return eMail;
+            Console.WriteLine(message);
+            Console.WriteLine();
         }
     }
 }
