@@ -222,6 +222,7 @@ namespace Bank
                 SourceAccount = sourceAccount.Number,
                 TargetAccount = targetAccount.Number,
             };
+
             _ioHelper.WriteString($"Date of the transfer: {newTransfer.DateOfTheTransfer}");
 
             var newAccountsBalance = _transfersService.BalanceChangeOfAccounts(sourceAccount.Id, targetAccount.Id, amount);
