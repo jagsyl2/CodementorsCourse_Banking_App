@@ -1,81 +1,19 @@
 ﻿using BankTransfers.DataLayer.Models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Bank
 {
     public class IoHelper
     {
-        public double GetAmountFromUser(Account account)
+        public void PrintCustomerAccounts(List<Account> customerAccounts)
         {
-            bool correctAmount;
-            double amount;
-            do
+            Console.WriteLine();
+            Console.WriteLine("Your accounts balance:");
+            foreach (var account in customerAccounts)
             {
-                amount = GetDoubleFromUser("Transfer amount");
-                correctAmount = true;
-
-                if (amount <= 0 || amount > account.Balance)
-                {
-                    WriteString("Wrong amount (below 0$ or insufficient funds on the account) - try again...");
-                    correctAmount = false;
-                }
+                PrintAccount(account);
             }
-            while (correctAmount == false);
-
-            return amount;
-        }
-
-        public Account GetAccountFromUser(string message, List<Account> customerAccounts)
-        {
-            WriteString(message);
-            bool existAccounId;
-            int sourceAccountId;
-
-            do
-            {
-                sourceAccountId = GetIntFromUser("Provide the source account number");
-                existAccounId = true;
-
-                if (!customerAccounts.Any(account => account.Id == sourceAccountId))
-                {
-                    WriteString("Incorrect account Id!");
-                    existAccounId = false;
-                }
-            }
-            while (existAccounId == false);
-
-            var sourceAccount = customerAccounts.First(account => sourceAccountId == account.Id);
-            return sourceAccount;
-        }
-
-        public Account GetAccountFromUser(List<Account> customerAccounts, int sourceAccountId)
-        {
-            bool existAccounId;
-            int targetAccountId;
-
-            do
-            {
-                targetAccountId = GetIntFromUser("Provide the target account number");
-                existAccounId = true;
-
-                if (!customerAccounts.Any(account => account.Id == targetAccountId))
-                {
-                    WriteString("Incorrect account Id!");
-                    existAccounId = false;
-                }
-
-                if (sourceAccountId == targetAccountId)
-                {
-                    WriteString("Same account selected - try again...");
-                    existAccounId = false;
-                }
-            }
-            while (existAccounId == false);
-
-            var targetAccount = customerAccounts.First(account => targetAccountId == account.Id);
-            return targetAccount;
         }
 
         public void PrintAccount(Account account)
@@ -134,22 +72,6 @@ namespace Bank
         {
             Console.Write($"{message}: ");
             return Console.ReadLine();
-        }
-
-        public int GetPhoneNumberFromUser(string message)
-        {
-            int phoneNumber;
-            bool validation;
-
-            do
-            {
-                phoneNumber = GetIntFromUser(message);
-                validation = phoneNumber.ToString().Length == 9;
-                Console.WriteLine(validation ? "" : "Incorrect phone number (must contain 9 digits). Try again...");
-            }
-            while (validation == false);
-
-            return phoneNumber;
         }
 
         public void WriteString (string message)

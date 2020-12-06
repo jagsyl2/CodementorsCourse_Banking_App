@@ -49,18 +49,28 @@ namespace BankTransfers.BusinessLayer
             }
         }
 
-        public double BalanceChangeOfTargetAccount(int targetAccountId, double amount)
+        public Dictionary<int, double> BalanceChangeOfAccounts(int sourceAccountId, int targetAccountId, double amount)
         {
             using (var context = new BankDbContex())
             {
+                var sourceAccount = context.Accounts
+                    .Where(account => account.Id == sourceAccountId)
+                    .FirstOrDefault();
+
                 var targetAccount = context.Accounts
                     .Where(account => account.Id == targetAccountId)
                     .FirstOrDefault();
 
+                sourceAccount.Balance -= amount;
                 targetAccount.Balance += amount;
 
                 context.SaveChanges();
-                return targetAccount.Balance;
+
+                Dictionary<int, double> newAccountsBalance = new Dictionary<int, double>();
+                newAccountsBalance[sourceAccount.Id] = sourceAccount.Balance;
+                newAccountsBalance[targetAccount.Id] = targetAccount.Balance;
+                
+                return newAccountsBalance;
             }
         }
     }

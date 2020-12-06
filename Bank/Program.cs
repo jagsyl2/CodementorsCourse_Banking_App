@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using BankTransfers.BusinessLayer;
 using BankTransfers.DataLayer.Models;
 
@@ -15,6 +14,8 @@ namespace Bank
         private Menu                        _registerMenu               = new Menu();
         private Menu                        _customerMenu               = new Menu();
         private IoHelper                    _ioHelper                   = new IoHelper();
+        private IoRegisterHelper            _ioRegisterHelper           = new IoRegisterHelper();
+        private IoTransferHelper            _ioTransferHelper           = new IoTransferHelper();
         private AccountsService             _accountsService            = new AccountsService();
         private CustomersService            _customersService           = new CustomersService();
         private TransfersService            _transfersService           = new TransfersService();
@@ -42,7 +43,6 @@ namespace Bank
         private void RegisterMenuOptions()
         {
             Console.WriteLine("Choose option:");
-
             _registerMenu.AddOption(new MenuItem { Keys = 1, Action = SignIn,   Description = "Sign In" });
             _registerMenu.AddOption(new MenuItem { Keys = 2, Action = Register, Description = "Register" });
         }
@@ -69,9 +69,9 @@ namespace Bank
         private void Register()
         {
             Console.WriteLine();
-            var eMail = GetEMailFromUser("Enter your e-mail");
-            var phoneNumber = _ioHelper.GetPhoneNumberFromUser("Enter phone number");
-            var password = _ioHelper.GetTextFromUser("Enter password");
+            var eMail = _ioRegisterHelper.GetEMailFromUser("Enter your e-mail");
+            var phoneNumber = _ioRegisterHelper.GetPhoneNumberFromUser("Enter phone number");
+            var password = _ioTransferHelper.GetNotNullTextFromUser("Enter password");
 
             var newCustomer = new Customer
             {
@@ -82,35 +82,6 @@ namespace Bank
 
             _customersService.AddCustomer(newCustomer);
             _ioHelper.WriteString("Registration is correct!");
-        }
-
-        public string GetEMailFromUser(string message)
-        {
-            string eMail;
-            bool validation;
-
-            do
-            {
-                eMail = _ioHelper.GetTextFromUser(message);
-                validation = true;
-
-                if (!(eMail).Contains("@"))
-                {
-                    _ioHelper.WriteString("Incorrect adress e-mail (must contain the @ sign). Try again...");
-
-                    validation = false;
-                    continue;
-                }
-                
-                if (_customersService.CheckingIfANewCustomerIsRegistering(eMail) == true)
-                {
-                    _ioHelper.WriteString("The given email address exists. Try again...");
-                    validation = false;
-                }
-            }
-            while (validation == false);
-
-            return eMail;
         }
 
         private void Menu()
@@ -175,7 +146,7 @@ namespace Bank
                 return;
             }
 
-            PrintCustomerAccounts(customerAccounts);
+            _ioHelper.PrintCustomerAccounts(customerAccounts);
             Console.WriteLine();
         }
 
@@ -189,12 +160,17 @@ namespace Bank
                 return;
             }
 
-            PrintCustomerAccounts(customerAccounts);
+            if (_ioTransferHelper.CheckingIfThereIsAccountWithPositiveBalance(customerAccounts)==false)
+            {
+                return;
+            }
+
+            _ioHelper.PrintCustomerAccounts(customerAccounts);
             
-            var sourceAccount = _ioHelper.GetAccountFromUser("Make an outgoing transfer:", customerAccounts);
-            var amount = _ioHelper.GetAmountFromUser(sourceAccount);
+            var sourceAccount = _ioTransferHelper.GetAccountFromUser("Make an outgoing transfer:", customerAccounts);
+            var amount = _ioTransferHelper.GetAmountFromUser(sourceAccount);
             var targetGuid = _ioHelper.GetGuidFromUser("Provide the target account number (the number of GUID)");
-            var title = CheckingIfItIsCorrect("Transfer title");
+            var title = _ioTransferHelper.GetNotNullTextFromUser("Transfer title");
 
             Transfer newTransfer = new Transfer()
             {
@@ -224,12 +200,17 @@ namespace Bank
                 return;
             }
 
-            PrintCustomerAccounts(customerAccounts);
+            if (_ioTransferHelper.CheckingIfThereIsAccountWithPositiveBalance(customerAccounts) == false)
+            {
+                return;
+            }
 
-            var sourceAccount = _ioHelper.GetAccountFromUser("Make a domestic transfer:", customerAccounts);
-            var targetAccount = _ioHelper.GetAccountFromUser(customerAccounts, sourceAccount.Id);
-            var amount = _ioHelper.GetAmountFromUser(sourceAccount);
-            var title = CheckingIfItIsCorrect("Transfer title");
+            _ioHelper.PrintCustomerAccounts(customerAccounts);
+
+            var sourceAccount = _ioTransferHelper.GetAccountFromUser("Make a domestic transfer:", customerAccounts);
+            var targetAccount = _ioTransferHelper.GetAccountFromUser(customerAccounts, sourceAccount.Id);
+            var amount = _ioTransferHelper.GetAmountFromUser(sourceAccount);
+            var title = _ioTransferHelper.GetNotNullTextFromUser("Transfer title");
 
             Transfer newTransfer = new Transfer()
             {
@@ -243,30 +224,21 @@ namespace Bank
             };
             _ioHelper.WriteString($"Date of the transfer: {newTransfer.DateOfTheTransfer}");
 
-            var currentBalanceSource = _transfersService.BalanceChangeOfSourceAccount(sourceAccount.Id, amount);
+            var newAccountsBalance = _transfersService.BalanceChangeOfAccounts(sourceAccount.Id, targetAccount.Id, amount);
+            var currentBalanceSource = newAccountsBalance[sourceAccount.Id];
+            var currentBalanceTarget = newAccountsBalance[targetAccount.Id];
+            
             Console.WriteLine($"Account: \"{sourceAccount.Name}\" - Balance: {currentBalanceSource}$");
-
-            var currentBalanceTarget = _transfersService.BalanceChangeOfTargetAccount(targetAccount.Id, amount);
             _ioHelper.WriteString($"Account: \"{targetAccount.Name}\" - Balance: {currentBalanceTarget}$");
 
             _transfersService.AddTransfer(newTransfer);
-        }
-
-        private void PrintCustomerAccounts(List<Account> customerAccounts)
-        {
-            Console.WriteLine();
-            Console.WriteLine("Your accounts balance:");
-            foreach (var account in customerAccounts)
-            {
-                _ioHelper.PrintAccount(account);
-            }
         }
 
         private void CreateAccount()
         {
             Console.WriteLine();
             Console.WriteLine("Create Account:");
-            var accountName = CheckingIfItIsCorrect("Provide account name");
+            var accountName = _ioTransferHelper.GetNotNullTextFromUser("Provide account name");
 
             Account newAccount = new Account()
             {
@@ -280,18 +252,6 @@ namespace Bank
 
             _accountsService.AddAccount(newAccount);
             _ioHelper.WriteString($"\nAccount \"{newAccount.Name}\" added successfully");
-        }
-
-        private string CheckingIfItIsCorrect(string message)
-        {
-            string title;
-            do
-            {
-                title = _ioHelper.GetTextFromUser(message);
-            }
-            while (_ioHelper.CheckingIfIsNullOrWhiteSpace(title));
-
-            return title;
         }
     }
 }
