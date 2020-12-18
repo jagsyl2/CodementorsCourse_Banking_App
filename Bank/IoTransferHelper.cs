@@ -33,59 +33,56 @@ namespace Bank
         {
             Console.WriteLine();
             Console.WriteLine(message);
-            bool existAccounId;
-            int sourceAccountId;
+
+            Account sourceAccount = null;
 
             do
             {
-                sourceAccountId = _ioHelper.GetIntFromUser("Provide the source account number");
-                existAccounId = true;
+                int sourceAccountId = _ioHelper.GetIntFromUser("Provide the source account number");
 
-                if (!customerAccounts.Any(account => account.Id == sourceAccountId))
+                sourceAccount = customerAccounts.FirstOrDefault(account => sourceAccountId == account.Id);
+
+                if (sourceAccount == null)
                 {
                     _ioHelper.WriteString("Incorrect account Id!");
-                    existAccounId = false;
                     continue;
                 }
-                if (!customerAccounts
-                    .Where(account => account.Id == sourceAccountId)
-                    .Any(account => (account.Balance > 0)))
+                
+                if (sourceAccount.Balance <= 0)
                 {
                     _ioHelper.WriteString("There are no funds in this account");
-                    existAccounId = false;
+                    sourceAccount = null;
                 }
             }
-            while (existAccounId == false);
+            while (sourceAccount == null);
 
-            var sourceAccount = customerAccounts.First(account => sourceAccountId == account.Id);
             return sourceAccount;
         }
 
-        public Account GetAccountFromUser(List<Account> customerAccounts, int sourceAccountId)
+        public Account GetAndCheckIfTheAccountIsNonSourceAccount(List<Account> customerAccounts, int sourceAccountId)
         {
-            bool existAccounId;
-            int targetAccountId;
+            Account targetAccount = null;
 
             do
             {
-                targetAccountId = _ioHelper.GetIntFromUser("Provide the target account number");
-                existAccounId = true;
+                int targetAccountId = _ioHelper.GetIntFromUser("Provide the target account number");
 
-                if (!customerAccounts.Any(account => account.Id == targetAccountId))
+                targetAccount = customerAccounts.First(account => targetAccountId == account.Id);
+
+                if (targetAccount == null)
                 {
                     _ioHelper.WriteString("Incorrect account Id!");
-                    existAccounId = false;
+                    continue;
                 }
 
-                if (sourceAccountId == targetAccountId)
+                if (sourceAccountId == targetAccount.Id)
                 {
                     _ioHelper.WriteString("Same account selected - try again...");
-                    existAccounId = false;
+                    targetAccount = null;
                 }
             }
-            while (existAccounId == false);
+            while (targetAccount == null);
 
-            var targetAccount = customerAccounts.First(account => targetAccountId == account.Id);
             return targetAccount;
         }
 

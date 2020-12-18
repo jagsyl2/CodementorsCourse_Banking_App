@@ -40,7 +40,7 @@ namespace Bank
                 eMail = _ioHelper.GetTextFromUser(message);
                 validation = true;
 
-                if (!(eMail).Contains("@"))
+                if (!eMail.Contains("@"))
                 {
                     _ioHelper.WriteString("Incorrect adress e-mail (must contain the @ sign). Try again...");
 

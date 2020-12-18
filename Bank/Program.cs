@@ -184,7 +184,7 @@ namespace Bank
             };
             _ioHelper.WriteString($"Date of the transfer: {newTransfer.DateOfTheTransfer}");
 
-            var currentBalance = _transfersService.BalanceChangeOfSourceAccount(sourceAccount.Id, amount);
+            var currentBalance = _transfersService.ReductionOfSourceAccountBalance(sourceAccount.Id, amount);
             _ioHelper.WriteString($"Account: \"{sourceAccount.Name}\" - Balance: {currentBalance}$");
 
             _transfersService.AddTransfer(newTransfer);
@@ -208,7 +208,7 @@ namespace Bank
             _ioHelper.PrintCustomerAccounts(customerAccounts);
 
             var sourceAccount = _ioTransferHelper.GetAccountFromUser("Make a domestic transfer:", customerAccounts);
-            var targetAccount = _ioTransferHelper.GetAccountFromUser(customerAccounts, sourceAccount.Id);
+            var targetAccount = _ioTransferHelper.GetAndCheckIfTheAccountIsNonSourceAccount(customerAccounts, sourceAccount.Id);
             var amount = _ioTransferHelper.GetAmountFromUser(sourceAccount);
             var title = _ioTransferHelper.GetNotNullTextFromUser("Transfer title");
 

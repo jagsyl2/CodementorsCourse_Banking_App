@@ -11,7 +11,7 @@ namespace BankTransfers.DataLayer
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer(@"Server=.;Database=BankTransfers;Trusted_Connection=True;");
+            optionsBuilder.UseSqlServer(@"Server=.;Database=BankTransfers_Dev;Trusted_Connection=True;");
         }
     }
 }

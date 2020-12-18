@@ -34,12 +34,12 @@ namespace BankTransfers.BusinessLayer
             }
         }
 
-        public double BalanceChangeOfSourceAccount(int sourceAccountId, double amount)
+        public double ReductionOfSourceAccountBalance(int accoundId, double amount)
         {
             using (var context = new BankDbContex())
             {
                 var sourceAccount = context.Accounts
-                    .Where(account => account.Id == sourceAccountId)
+                    .Where(account => account.Id == accoundId)
                     .FirstOrDefault();
 
                 sourceAccount.Balance -= amount;
