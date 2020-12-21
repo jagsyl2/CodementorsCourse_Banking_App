@@ -1,5 +1,6 @@
 ﻿using BankTransfers.DataLayer;
 using BankTransfers.DataLayer.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -39,8 +40,9 @@ namespace BankTransfers.BusinessLayer
             using (var context = new BankDbContex())
             {
                 var sourceAccount = context.Accounts
-                    .Where(account => account.Id == accoundId)
-                    .FirstOrDefault();
+                    .FirstOrDefault(account => account.Id == accoundId);
+
+
 
                 sourceAccount.Balance -= amount;
 

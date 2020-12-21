@@ -1,5 +1,6 @@
 ﻿using BankTransfers.DataLayer;
 using BankTransfers.DataLayer.Models;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -20,7 +21,9 @@ namespace BankTransfers.BusinessLayer
         {
             using (var context = new BankDbContex())
             {
-                return context.Accounts.ToList();
+                return context.Accounts
+                    .Include(x=> x.customer)
+                    .ToList();
             }
         }
 

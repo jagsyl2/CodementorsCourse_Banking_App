@@ -13,5 +13,6 @@ namespace BankTransfers.DataLayer.Models
         public string TypOfTransfer { get; set; }
         public Guid SourceAccount { get; set; }
         public Guid TargetAccount { get; set; }
+
     }
 }

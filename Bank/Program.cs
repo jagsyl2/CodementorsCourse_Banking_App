@@ -1,6 +1,10 @@
 ﻿using System;
+using System.Text.Json;
+using Bank.ListOfTransfersOperations;
+using BankingProject.OutgoingTransfers.Sender;
 using BankTransfers.BusinessLayer;
 using BankTransfers.DataLayer.Models;
+using Newtonsoft.Json;
 
 namespace Bank
 {
@@ -20,9 +24,12 @@ namespace Bank
         private CustomersService            _customersService           = new CustomersService();
         private TransfersService            _transfersService           = new TransfersService();
         private DatabaseManagmentService    _databaseManagmentService   = new DatabaseManagmentService();
+        private StatementOfOperations       _statementOfOperations      = new StatementOfOperations();
+        
 
         private Customer _customer = null;
         private bool _exit = false;
+        
 
         private void Run()
         {
@@ -45,6 +52,8 @@ namespace Bank
             Console.WriteLine("Choose option:");
             _registerMenu.AddOption(new MenuItem { Keys = 1, Action = SignIn,   Description = "Sign In" });
             _registerMenu.AddOption(new MenuItem { Keys = 2, Action = Register, Description = "Register" });
+
+
         }
 
         private void SignIn()
@@ -107,7 +116,30 @@ namespace Bank
             _customerMenu.AddOption(new MenuItem { Keys = 3, Action = OutgoingTransfer,           Description = "Make an outgoing transfer" });
             _customerMenu.AddOption(new MenuItem { Keys = 4, Action = PrintAccounts,              Description = "Check yours accounts balance" });
             _customerMenu.AddOption(new MenuItem { Keys = 5, Action = CheckTheHistoryOfTransfers, Description = "Check the history of transfers" });
-            _customerMenu.AddOption(new MenuItem { Keys = 6, Action = () => { _exit = true; },    Description = "Exit" });
+            _customerMenu.AddOption(new MenuItem { Keys = 6, Action = GeneratingAListOfOperations,Description = "Generating a list of operations" });
+            _customerMenu.AddOption(new MenuItem { Keys = 7, Action = () => { _exit = true; },    Description = "Exit" });
+        }
+
+        private void GeneratingAListOfOperations()
+        {
+            StatementOfOperations statementOfOperations = new StatementOfOperations
+            {
+                TotalValueOutgoingTransfersToSpecificAccounts = TotalValueOfTransfersSentToSpecificBankAccounts,
+                TotalValueIncomingTransfersFromSpecificAccounts = 0,
+                TotalValueOutgoingTransfers = _statementOfOperations.TotalValueOutgoingTransfers,
+                TotalValueIncomingTransfers = _statementOfOperations.TotalValueIncomingTransfers,
+                HigestValueOutgoingTransfers = _statementOfOperations.HigestValueOutgoingTransfers,
+                LowestValueOutgoingTransfers = _statementOfOperations.LowestValueOutgoingTransfers,
+                AverageValueOutgoingTransfers = _statementOfOperations.AverageValueOutgoingTransfers
+            };
+            
+            
+            
+            
+            
+            //_ioTransferHelper.TotalValueOfTransfersSentToSpecificBankAccounts(_customer.Id);
+            Console.WriteLine();
+            //_ioTransferHelper.TotalValueOfTransfersReceivedFromSpecificBankAccounts(_customer.Id);
         }
 
         private void CheckTheHistoryOfTransfers()
@@ -170,6 +202,7 @@ namespace Bank
             var sourceAccount = _ioTransferHelper.GetAccountFromUser("Make an outgoing transfer:", customerAccounts);
             var amount = _ioTransferHelper.GetAmountFromUser(sourceAccount);
             var targetGuid = _ioHelper.GetGuidFromUser("Provide the target account number (the number of GUID)");
+
             var title = _ioTransferHelper.GetNotNullTextFromUser("Transfer title");
 
             Transfer newTransfer = new Transfer()
@@ -181,11 +214,27 @@ namespace Bank
                 TypOfTransfer = "External transfer",
                 SourceAccount = sourceAccount.Number,
                 TargetAccount = targetGuid,
+                //TransferToOurBankAccount = transferToOurBankAccount,
             };
             _ioHelper.WriteString($"Date of the transfer: {newTransfer.DateOfTheTransfer}");
 
-            var currentBalance = _transfersService.ReductionOfSourceAccountBalance(sourceAccount.Id, amount);
-            _ioHelper.WriteString($"Account: \"{sourceAccount.Name}\" - Balance: {currentBalance}$");
+            var targetGuidIsAccountInOurBank = _ioTransferHelper.CheckingIfTargetGuidIsAccountInOurBank(_customer.Id, targetGuid);      //ulepszyć!!!!
+            if (targetGuidIsAccountInOurBank == null)
+            {
+                var currentBalance = _transfersService.ReductionOfSourceAccountBalance(sourceAccount.Id, amount);
+                _ioHelper.WriteString($"Account: \"{sourceAccount.Name}\" - Balance: {currentBalance}$");
+
+                var sender = new GlobalOutgoingTransfersSender();
+                var jsonData = JsonConvert.SerializeObject(newTransfer);
+                sender.Send(jsonData);
+            }
+            else
+            {
+                var newAccountsBalance = _transfersService.BalanceChangeOfAccounts(sourceAccount.Id, targetGuidIsAccountInOurBank.Id, amount);
+                var currentBalanceSource = newAccountsBalance[sourceAccount.Id];
+
+                _ioHelper.WriteString($"Account: \"{sourceAccount.Name}\" - Balance: {currentBalanceSource}$");
+            }
 
             _transfersService.AddTransfer(newTransfer);
         }

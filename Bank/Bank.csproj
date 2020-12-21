@@ -11,10 +11,22 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="NPOI" Version="2.5.2" />
+    <PackageReference Include="System.Collections" Version="4.3.0" />
+    <PackageReference Include="System.Linq" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\BankTransfers.BusinessLayer\BankTransfers.BusinessLayer.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="BankingProject.OutgoingTransfers.Receiver">
+      <HintPath>..\BankingProject.OutgoingTransfers.Receiver\BankingProject.OutgoingTransfers.Receiver.dll</HintPath>
+    </Reference>
+    <Reference Include="BankingProject.OutgoingTransfers.Sender">
+      <HintPath>..\BankingProject.OutgoingTransfers.Sender\BankingProject.OutgoingTransfers.Sender.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

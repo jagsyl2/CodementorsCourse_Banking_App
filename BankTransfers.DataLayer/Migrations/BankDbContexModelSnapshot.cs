@@ -114,13 +114,13 @@ namespace BankTransfers.DataLayer.Migrations
 
             modelBuilder.Entity("BankTransfers.DataLayer.Models.Transfer", b =>
                 {
-                    b.HasOne("BankTransfers.DataLayer.Models.Customer", "customer")
+                    b.HasOne("BankTransfers.DataLayer.Models.Customer", "Customer")
                         .WithMany("Transfers")
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("customer");
+                    b.Navigation("Customer");
                 });
 
             modelBuilder.Entity("BankTransfers.DataLayer.Models.Customer", b =>
