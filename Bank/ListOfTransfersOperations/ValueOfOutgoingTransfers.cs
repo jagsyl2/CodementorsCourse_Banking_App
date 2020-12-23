@@ -9,7 +9,7 @@ namespace Bank.ListOfTransfersOperations
     {
         private TransfersService _transfersService = new TransfersService();
 
-        public void TotalValueOfOutgoingTransfers(int customerId)
+        public void PrintTotalValueOfOutgoingTransfers(int customerId)
         {
             var listOfCustomerTransfers = GetAndCheckIfUserHasOutgoingTransfers(customerId);
             if (listOfCustomerTransfers == null)
@@ -19,6 +19,17 @@ namespace Bank.ListOfTransfersOperations
 
             PrintListOfOperation(SumOfTransfersSent(listOfCustomerTransfers));
         }
+
+        //public List<SelectItem> GetTotalValueOfOutgoingTransfers(int customerId)
+        //{
+        //    var listOfCustomerTransfers = GetAndCheckIfUserHasOutgoingTransfers(customerId);
+        //    if (listOfCustomerTransfers == null)
+        //    {
+        //        return null;
+        //    }
+
+        //    return SumOfTransfersSent(listOfCustomerTransfers);
+        //}
 
         public List<Transfer> GetAndCheckIfUserHasOutgoingTransfers(int customerId)
         {

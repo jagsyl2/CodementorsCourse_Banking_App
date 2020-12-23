@@ -24,7 +24,7 @@ namespace Bank
         private CustomersService            _customersService           = new CustomersService();
         private TransfersService            _transfersService           = new TransfersService();
         private DatabaseManagmentService    _databaseManagmentService   = new DatabaseManagmentService();
-        private StatementOfOperations       _statementOfOperations      = new StatementOfOperations();
+        //private StatementOfOperations       _statementOfOperations      = new StatementOfOperations();
         
 
         private Customer _customer = null;
@@ -122,24 +122,30 @@ namespace Bank
 
         private void GeneratingAListOfOperations()
         {
-            StatementOfOperations statementOfOperations = new StatementOfOperations
-            {
-                TotalValueOutgoingTransfersToSpecificAccounts = TotalValueOfTransfersSentToSpecificBankAccounts,
-                TotalValueIncomingTransfersFromSpecificAccounts = 0,
-                TotalValueOutgoingTransfers = _statementOfOperations.TotalValueOutgoingTransfers,
-                TotalValueIncomingTransfers = _statementOfOperations.TotalValueIncomingTransfers,
-                HigestValueOutgoingTransfers = _statementOfOperations.HigestValueOutgoingTransfers,
-                LowestValueOutgoingTransfers = _statementOfOperations.LowestValueOutgoingTransfers,
-                AverageValueOutgoingTransfers = _statementOfOperations.AverageValueOutgoingTransfers
-            };
+            //var x = new TotalValueOfTransfersSentToSpecificBankAccounts();
+            //x.
+            //var y = new 
+
+            //StatementOfOperations statementOfOperations = new StatementOfOperations
+            //{
+            //    TotalValueOutgoingTransfersToSpecificAccounts = x.PrintTotalValueOfOutgoingTransfers(_customer.Id),
+            //    TotalValueIncomingTransfersFromSpecificAccounts = 0,
+            //    TotalValueOutgoingTransfers = 0,
+            //    TotalValueIncomingTransfers = _statementOfOperations.TotalValueIncomingTransfers,
+            //    HigestValueOutgoingTransfers = _statementOfOperations.HigestValueOutgoingTransfers,
+            //    LowestValueOutgoingTransfers = _statementOfOperations.LowestValueOutgoingTransfers,
+            //    AverageValueOutgoingTransfers = _statementOfOperations.AverageValueOutgoingTransfers
+            //};
+
+            //var x = new TotalValueOfTransfersSentToSpecificBankAccounts();
+            //x.PrintTotalValueOfOutgoingTransfers(_customer.Id);
+                
             
             
             
-            
-            
-            //_ioTransferHelper.TotalValueOfTransfersSentToSpecificBankAccounts(_customer.Id);
+            _ioTransferHelper.TotalValueOfTransfersSentToSpecificBankAccounts(_customer.Id);
             Console.WriteLine();
-            //_ioTransferHelper.TotalValueOfTransfersReceivedFromSpecificBankAccounts(_customer.Id);
+            _ioTransferHelper.TotalValueOfTransfersReceivedFromSpecificBankAccounts(_customer.Id);
         }
 
         private void CheckTheHistoryOfTransfers()
