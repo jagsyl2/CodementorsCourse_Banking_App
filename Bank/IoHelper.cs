@@ -1,4 +1,5 @@
-﻿using BankTransfers.DataLayer.Models;
+﻿using BankTransfers.BusinessLayer.Serializers;
+using BankTransfers.DataLayer.Models;
 using System;
 using System.Collections.Generic;
 
@@ -49,6 +50,24 @@ namespace Bank
                 return true;
             }
             return false;
+        }
+
+        public SerializationDesire GetSerializationDesireFromUser(string message)
+        {
+            var correctValues = "";
+
+            foreach (var item in (SerializationDesire[])Enum.GetValues(typeof(SerializationDesire)))
+            {
+                correctValues += $"{item},";
+            }
+
+            object result;
+            while (!Enum.TryParse(typeof(SerializationDesire), GetTextFromUser($"{message} ({correctValues})"), out result))
+            {
+                Console.WriteLine("Not correct value - use Yes or No. Try again...");
+            }
+
+            return (SerializationDesire)result;
         }
 
         public Guid GenerateGuidToUser()

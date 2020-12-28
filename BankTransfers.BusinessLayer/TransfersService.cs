@@ -1,5 +1,6 @@
 ﻿using BankTransfers.DataLayer;
 using BankTransfers.DataLayer.Models;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,6 +35,53 @@ namespace BankTransfers.BusinessLayer
                     .ToList();
             }
         }
+
+        public List<Transfer> GetTransfersOutgoingFromTheAccount(Account account)
+        {
+            using (var context = new BankDbContex())
+            {
+                return context.Transfers
+                    .Where(transfer => transfer.SourceAccount == account.Number)
+                    .ToList();
+            }
+        }
+
+        public List<Transfer> GetIncomingTransfersToTheAccount(Account account)
+        {
+            using (var context = new BankDbContex())
+            {
+                return context.Transfers
+                    .Where(transfer => transfer.TargetAccount == account.Number)
+                    .ToList();
+            }
+        }
+
+
+
+        //public List<Transfer> GetIncomingTransfers(Customer customer)
+        //{
+        //    using (var context = new BankDbContex())
+        //    {
+        //        var customerAccounts = context.Accounts
+        //            .Where(x => x.CustomerId == customer.Id)
+        //            ;
+
+        //        return context.Transfers
+        //            .Where(transfer => transfer.CustomerId != customer.Id)
+
+        //            .Select(transfer => transfer.TargetAccount == customerAccounts)
+        //            .ToList();
+        //    }
+        //}
+
+
+
+        //!listOfAllAccounts
+        //        .Where(x => x.CustomerId != CustomerId)
+        //        .Any(x => x.Number == accountNumber))
+
+
+
 
         public double ReductionOfSourceAccountBalance(int accoundId, double amount)
         {

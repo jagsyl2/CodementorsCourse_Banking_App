@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Text.Json;
-using Bank.ListOfTransfersOperations;
+using System.Collections.Generic;
+using System.Linq;
 using BankingProject.OutgoingTransfers.Sender;
 using BankTransfers.BusinessLayer;
 using BankTransfers.DataLayer.Models;
@@ -25,7 +25,8 @@ namespace Bank
         private TransfersService            _transfersService           = new TransfersService();
         private DatabaseManagmentService    _databaseManagmentService   = new DatabaseManagmentService();
         //private StatementOfOperations       _statementOfOperations      = new StatementOfOperations();
-        
+        private ServiceOfStatementsOfOperations    _serviceStatementOfOperations      = new ServiceOfStatementsOfOperations();
+        private SumItem _sumItem = new SumItem();
 
         private Customer _customer = null;
         private bool _exit = false;
@@ -122,30 +123,129 @@ namespace Bank
 
         private void GeneratingAListOfOperations()
         {
-            //var x = new TotalValueOfTransfersSentToSpecificBankAccounts();
-            //x.
-            //var y = new 
+            var listOfCustomerAccounts = _accountsService.GetCustomerAccounts(_customer.Id);
+            if (listOfCustomerAccounts == null)
+            {
+                Console.WriteLine("You don't have accounts in our bank.");
+                return;
+            }
 
-            //StatementOfOperations statementOfOperations = new StatementOfOperations
-            //{
-            //    TotalValueOutgoingTransfersToSpecificAccounts = x.PrintTotalValueOfOutgoingTransfers(_customer.Id),
-            //    TotalValueIncomingTransfersFromSpecificAccounts = 0,
-            //    TotalValueOutgoingTransfers = 0,
-            //    TotalValueIncomingTransfers = _statementOfOperations.TotalValueIncomingTransfers,
-            //    HigestValueOutgoingTransfers = _statementOfOperations.HigestValueOutgoingTransfers,
-            //    LowestValueOutgoingTransfers = _statementOfOperations.LowestValueOutgoingTransfers,
-            //    AverageValueOutgoingTransfers = _statementOfOperations.AverageValueOutgoingTransfers
-            //};
+            var listOfStatementOfOperations = new List<StatementOfOperations>();
 
-            //var x = new TotalValueOfTransfersSentToSpecificBankAccounts();
-            //x.PrintTotalValueOfOutgoingTransfers(_customer.Id);
+            foreach (var account in listOfCustomerAccounts)
+            {
+                var listOfOutgoingTransfersFromAccount = _transfersService.GetTransfersOutgoingFromTheAccount(account);
+                var listOfIncomingTransfersToAccount = _transfersService.GetIncomingTransfersToTheAccount(account);
+
+                var sumOfTransfersSentToSpecificAccounts = listOfOutgoingTransfersFromAccount
+                    .GroupBy(x => new { x.TargetAccount })
+                    .Select(g =>
+                            new SumItem
+                            {
+                                Account = g.Key.TargetAccount,
+                                SumOfTransfers = g.Sum(x => x.Amount)
+                            });
+                //.OrderBy(x => x.SourceAccount);
+
+                Console.WriteLine();
+                Console.WriteLine($"For the account {account.Name} number {account.Number}:");
+                Console.WriteLine();
+                Console.WriteLine("Total value of transfers sent to specific bank accounts:");
+                foreach (var sum in sumOfTransfersSentToSpecificAccounts)
+                {
+                    Console.WriteLine($"- in total {sum.SumOfTransfers}$ was sent to the account: {sum.Account}");
+                }
+
+
+                var sumOfTransfersIncomingFromSpecificAccounts = listOfIncomingTransfersToAccount
+                    .GroupBy(y => new { y.SourceAccount })
+                    .Select(g =>
+                        new SumItem
+                        {
+                            Account = g.Key.SourceAccount,
+                            SumOfTransfers = g.Sum(x => x.Amount)
+                        });
+                //.OrderBy(x => x.TargetAccount);
+
+                Console.WriteLine();
+                Console.WriteLine("Total value of transfers received from specific bank accounts:");
+                foreach (var sum in sumOfTransfersIncomingFromSpecificAccounts)
+                {
+                    Console.WriteLine($"- a total of {sum.SumOfTransfers}$ was received from the account: {sum.Account}");
+                }
+
+
+                var sumOfOutgoingTransfers = listOfOutgoingTransfersFromAccount
+                    .Sum(x => x.Amount);
+
+                Console.WriteLine();
+                Console.WriteLine($"Total value of outgoing transfers is {sumOfOutgoingTransfers}.");
+
+                var sumOfIncomingTransfers = listOfIncomingTransfersToAccount
+                    .Sum(x => x.Amount);
+
+                Console.WriteLine($"Total value of incoming transfers is {sumOfIncomingTransfers}.");
+
+                var maxValoueOfOutgoingTransfers = listOfOutgoingTransfersFromAccount
+                    .Max(x => x.Amount);
+
+                Console.WriteLine($"The highest value of an outgoing transfer: {maxValoueOfOutgoingTransfers}$");
                 
-            
-            
-            
-            _ioTransferHelper.TotalValueOfTransfersSentToSpecificBankAccounts(_customer.Id);
-            Console.WriteLine();
-            _ioTransferHelper.TotalValueOfTransfersReceivedFromSpecificBankAccounts(_customer.Id);
+                var minValoueOfOutgoingTransfers = listOfOutgoingTransfersFromAccount
+                    .Min(x => x.Amount);
+
+                Console.WriteLine($"The lowest value of an outgoing transfer: {minValoueOfOutgoingTransfers}$");
+                
+                var averageValoueOfOutgoingTransfers = Math.Round(listOfOutgoingTransfersFromAccount.Average(x => x.Amount),2);
+
+                Console.WriteLine($"The average value of an outgoing transfer: {averageValoueOfOutgoingTransfers}$");
+                Console.WriteLine();
+
+                StatementOfOperations statementOfOperationForAccount = new StatementOfOperations
+                {
+                    ForAccount = account.Number,
+                    TotalValueOutgoingTransfersToSpecificAccounts = sumOfTransfersSentToSpecificAccounts,
+                    TotalValueIncomingTransfersFromSpecificAccounts = sumOfTransfersIncomingFromSpecificAccounts,
+                    TotalValueOutgoingTransfers = sumOfOutgoingTransfers,
+                    TotalValueIncomingTransfers = sumOfIncomingTransfers,
+                    HigestValueOutgoingTransfers = maxValoueOfOutgoingTransfers,
+                    LowestValueOutgoingTransfers = minValoueOfOutgoingTransfers,
+                    AverageValueOutgoingTransfers = averageValoueOfOutgoingTransfers,
+                };
+
+                listOfStatementOfOperations.Add(statementOfOperationForAccount);
+            }
+
+
+
+
+
+            var desire = _ioHelper.GetSerializationDesireFromUser("Do you want to export the operation statement to a file?");
+            switch (desire)
+            {
+                case BankTransfers.BusinessLayer.Serializers.SerializationDesire.Yes:
+                    DoSerialization(listOfStatementOfOperations);
+                    break;
+                case BankTransfers.BusinessLayer.Serializers.SerializationDesire.No:
+                    break;
+                default:
+                    throw new Exception("Unknown serialization format");
+                    
+            }
+
+        }
+
+        private void DoSerialization(List<StatementOfOperations> listOfStatementOfOperations)
+        {
+            var targetPath = _ioHelper.GetTextFromUser("Enter target path");
+            if (_serviceStatementOfOperations.SerializeStatementOfOperations(targetPath, listOfStatementOfOperations))
+            {
+                Console.WriteLine("The file with operation exported successfull");
+            }
+            else
+            {
+                Console.WriteLine("Error during the file operations export");
+            }
         }
 
         private void CheckTheHistoryOfTransfers()
@@ -159,7 +259,7 @@ namespace Bank
             }
 
             Console.WriteLine();
-            _ioHelper.WriteString("The history of transfers:");
+            _ioHelper.WriteString("The history of transfers :");
             
             foreach (Transfer transfers in history)
             {                                                                           
@@ -168,7 +268,7 @@ namespace Bank
                                  GUID target account:   {transfers.TargetAccount}
                                  Transfer Title:        {transfers.Title}  
                                  Transfers Amount:      {transfers.Amount}
-                                 Typ of transfer:       {transfers.TypOfTransfer}";
+                                 Type of transfer:      {transfers.TypOfTransfer}";
                 _ioHelper.WriteString(text);
             }
         }

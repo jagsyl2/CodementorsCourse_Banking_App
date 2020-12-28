@@ -128,101 +128,101 @@ namespace Bank
             }
         }
 
-        public void TotalValueOfTransfersSentToSpecificBankAccounts(int customerId)
-        {
-            var listOfCustomerTransfers = _transfersService.GetTransfers(customerId);
-            if (listOfCustomerTransfers == null)
-            {
-                Console.WriteLine("You don't have outgoing transfers.");
-                return;
-            }
+        //public void TotalValueOfTransfersSentToSpecificBankAccounts(int customerId)
+        //{
+        //    var listOfCustomerTransfers = _transfersService.GetTransfers(customerId);
+        //    if (listOfCustomerTransfers == null)
+        //    {
+        //        Console.WriteLine("You don't have outgoing transfers.");
+        //        return;
+        //    }
 
-            var sumOfTransfersSent = listOfCustomerTransfers
-                .GroupBy(x => new { x.SourceAccount, x.TargetAccount })
-                .Select(g =>
-                        new {
-                            SourceAccount = g.Key.SourceAccount,
-                            TargetAccount = g.Key.TargetAccount,
-                            SumOfTransfers = g.Sum(x => x.Amount)
-                            }
-                        )
-                .OrderBy(x => x.SourceAccount);
+        //    var sumOfTransfersSent = listOfCustomerTransfers
+        //        .GroupBy(x => new { x.SourceAccount, x.TargetAccount })
+        //        .Select(g =>
+        //                new {
+        //                    SourceAccount = g.Key.SourceAccount,
+        //                    TargetAccount = g.Key.TargetAccount,
+        //                    SumOfTransfers = g.Sum(x => x.Amount)
+        //                    }
+        //                )
+        //        .OrderBy(x => x.SourceAccount);
 
-            Console.WriteLine("Total value of transfers sent to specific bank accounts:");
-            foreach (var sum in sumOfTransfersSent)
-            {
-                Console.WriteLine($"From: {sum.SourceAccount} in total {sum.SumOfTransfers}$ was sent to account: {sum.TargetAccount}");
-            }
-        }
+        //    Console.WriteLine("Total value of transfers sent to specific bank accounts:");
+        //    foreach (var sum in sumOfTransfersSent)
+        //    {
+        //        Console.WriteLine($"From: {sum.SourceAccount} in total {sum.SumOfTransfers}$ was sent to account: {sum.TargetAccount}");
+        //    }
+        //}
 
-        public void TotalValueOfTransfersReceivedFromSpecificBankAccounts(int customerId)
-        {
-            var listOfAllTransfers = _transfersService.GetAllTransfers();
-            var listOfCustomerAccounts = _accountsService.GetCustomerAccounts(customerId);
+        //public void TotalValueOfTransfersReceivedFromSpecificBankAccounts(int customerId)
+        //{
+        //    var listOfAllTransfers = _transfersService.GetAllTransfers();
+        //    var listOfCustomerAccounts = _accountsService.GetCustomerAccounts(customerId);
             
-            if (listOfCustomerAccounts == null)
-            {
-                Console.WriteLine("You don't have accounts in our bank.");
-                return;
-            }
+        //    if (listOfCustomerAccounts == null)
+        //    {
+        //        Console.WriteLine("You don't have accounts in our bank.");
+        //        return;
+        //    }
 
-            List<Transfer> listOfIncomingTransfers = new List<Transfer>();
-            foreach (var account in listOfCustomerAccounts)
-            {
-                listOfIncomingTransfers
-                    .AddRange(listOfAllTransfers.Where(x => x.TargetAccount == account.Number));
-            }
+        //    List<Transfer> listOfIncomingTransfers = new List<Transfer>();
+        //    foreach (var account in listOfCustomerAccounts)
+        //    {
+        //        listOfIncomingTransfers
+        //            .AddRange(listOfAllTransfers.Where(x => x.TargetAccount == account.Number));
+        //    }
             
-            if (listOfIncomingTransfers == null)
-            {
-                Console.WriteLine("You don't have incoming transfers.");
-                return;
-            }
+        //    if (listOfIncomingTransfers == null)
+        //    {
+        //        Console.WriteLine("You don't have incoming transfers.");
+        //        return;
+        //    }
 
-            var sumOfTransfersIncoming = listOfIncomingTransfers
-                .GroupBy(y => new { y.TargetAccount, y.SourceAccount })
-                .Select(g =>
-                    new
-                    {
-                        TargetAccount = g.Key.TargetAccount,
-                        SourceAccount = g.Key.SourceAccount,
-                        SumOfTransfers = g.Sum(x => x.Amount)
-                    }
-                )
-                .OrderBy(x => x.TargetAccount);
+        //    var sumOfTransfersIncoming = listOfIncomingTransfers
+        //        .GroupBy(y => new { y.TargetAccount, y.SourceAccount })
+        //        .Select(g =>
+        //            new
+        //            {
+        //                TargetAccount = g.Key.TargetAccount,
+        //                SourceAccount = g.Key.SourceAccount,
+        //                SumOfTransfers = g.Sum(x => x.Amount)
+        //            }
+        //        )
+        //        .OrderBy(x => x.TargetAccount);
 
-            Console.WriteLine("Total value of transfers received from specific bank accounts:");
-            foreach (var sum in sumOfTransfersIncoming)
-            {
-                Console.WriteLine($"Account: {sum.TargetAccount} received a total of {sum.SumOfTransfers}$ from account: {sum.SourceAccount}");
-            }
-        }
-        public void TotalValueOfOutgoingTransfers(int customerId)
-        {
-            var listOfCustomerTransfers = _transfersService.GetTransfers(customerId);
-            if (listOfCustomerTransfers == null)
-            {
-                Console.WriteLine("You don't have outgoing transfers.");
-                return;
-            }
+        //    Console.WriteLine("Total value of transfers received from specific bank accounts:");
+        //    foreach (var sum in sumOfTransfersIncoming)
+        //    {
+        //        Console.WriteLine($"Account: {sum.TargetAccount} received a total of {sum.SumOfTransfers}$ from account: {sum.SourceAccount}");
+        //    }
+        //}
+        //public void TotalValueOfOutgoingTransfers(int customerId)
+        //{
+        //    var listOfCustomerTransfers = _transfersService.GetTransfers(customerId);
+        //    if (listOfCustomerTransfers == null)
+        //    {
+        //        Console.WriteLine("You don't have outgoing transfers.");
+        //        return;
+        //    }
 
-            var sumOfTransfersSent = listOfCustomerTransfers
-                .GroupBy(x => new { x.SourceAccount })
-                .Select(g =>
-                        new
-                        {
-                            SourceAccount = g.Key.SourceAccount,
-                            SumOfTransfers = g.Sum(x => x.Amount)
-                        }
-                        );
-                //.OrderBy(x => x.SourceAccount);
+        //    var sumOfTransfersSent = listOfCustomerTransfers
+        //        .GroupBy(x => new { x.SourceAccount })
+        //        .Select(g =>
+        //                new
+        //                {
+        //                    SourceAccount = g.Key.SourceAccount,
+        //                    SumOfTransfers = g.Sum(x => x.Amount)
+        //                }
+        //                );
+        //        //.OrderBy(x => x.SourceAccount);
 
-            Console.WriteLine("Total value of outgoing transfers:");
-            foreach (var sum in sumOfTransfersSent)
-            {
-                Console.WriteLine($"From the account: {sum.SourceAccount} total value of outgoing transfers is {sum.SumOfTransfers}$");
-            }
-        }
+        //    Console.WriteLine("Total value of outgoing transfers:");
+        //    foreach (var sum in sumOfTransfersSent)
+        //    {
+        //        Console.WriteLine($"From the account: {sum.SourceAccount} total value of outgoing transfers is {sum.SumOfTransfers}$");
+        //    }
+        //}
 
     }
 }
