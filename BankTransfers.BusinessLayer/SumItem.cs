@@ -4,7 +4,8 @@ namespace BankTransfers.BusinessLayer
 { 
     public class SumItem
     {
-        public Guid Account;
+        public Guid SourceAccount;
+        public Guid TargetAccount;
         public double SumOfTransfers;
     }
 }

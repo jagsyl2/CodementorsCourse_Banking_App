@@ -1,7 +1,5 @@
 ﻿using BankTransfers.DataLayer;
 using BankTransfers.DataLayer.Models;
-using Microsoft.EntityFrameworkCore;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -9,6 +7,7 @@ namespace BankTransfers.BusinessLayer
 {
     public class TransfersService
     {
+        private AccountsService _accountsService = new AccountsService();
         public void AddTransfer(Transfer transfer)
         {
             using (var context = new BankDbContex())
@@ -36,6 +35,29 @@ namespace BankTransfers.BusinessLayer
             }
         }
 
+        public List<Transfer> GetAllTransfersForCustomer(int customerId)
+        {
+            List<Transfer> listOfIncominAccounts = new List<Transfer>();
+
+            using (var context = new BankDbContex())
+            {
+                var listOfAccounts = _accountsService.GetCustomerAccounts(customerId);
+
+                listOfIncominAccounts.AddRange(GetTransfers(customerId));
+
+                foreach (var account in listOfAccounts)
+                {
+                    var list2 = context.Transfers
+                        .Where(transfer => transfer.CustomerId != customerId && transfer.TargetAccount == account.Number)
+                        .ToList();
+                    listOfIncominAccounts.AddRange(list2);
+                }
+            }
+            listOfIncominAccounts.OrderBy(x => x.DateOfTheTransfer);
+
+            return listOfIncominAccounts;
+        }
+
         public List<Transfer> GetTransfersOutgoingFromTheAccount(Account account)
         {
             using (var context = new BankDbContex())
@@ -56,41 +78,12 @@ namespace BankTransfers.BusinessLayer
             }
         }
 
-
-
-        //public List<Transfer> GetIncomingTransfers(Customer customer)
-        //{
-        //    using (var context = new BankDbContex())
-        //    {
-        //        var customerAccounts = context.Accounts
-        //            .Where(x => x.CustomerId == customer.Id)
-        //            ;
-
-        //        return context.Transfers
-        //            .Where(transfer => transfer.CustomerId != customer.Id)
-
-        //            .Select(transfer => transfer.TargetAccount == customerAccounts)
-        //            .ToList();
-        //    }
-        //}
-
-
-
-        //!listOfAllAccounts
-        //        .Where(x => x.CustomerId != CustomerId)
-        //        .Any(x => x.Number == accountNumber))
-
-
-
-
         public double ReductionOfSourceAccountBalance(int accoundId, double amount)
         {
             using (var context = new BankDbContex())
             {
                 var sourceAccount = context.Accounts
                     .FirstOrDefault(account => account.Id == accoundId);
-
-
 
                 sourceAccount.Balance -= amount;
 

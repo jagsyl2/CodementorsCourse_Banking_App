@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Timers;
 using BankingProject.OutgoingTransfers.Sender;
 using BankTransfers.BusinessLayer;
 using BankTransfers.DataLayer.Models;
@@ -15,26 +15,27 @@ namespace Bank
             new Program().Run();
         }
 
-        private Menu                        _registerMenu               = new Menu();
-        private Menu                        _customerMenu               = new Menu();
-        private IoHelper                    _ioHelper                   = new IoHelper();
-        private IoRegisterHelper            _ioRegisterHelper           = new IoRegisterHelper();
-        private IoTransferHelper            _ioTransferHelper           = new IoTransferHelper();
-        private AccountsService             _accountsService            = new AccountsService();
-        private CustomersService            _customersService           = new CustomersService();
-        private TransfersService            _transfersService           = new TransfersService();
-        private DatabaseManagmentService    _databaseManagmentService   = new DatabaseManagmentService();
-        //private StatementOfOperations       _statementOfOperations      = new StatementOfOperations();
-        private ServiceOfStatementsOfOperations    _serviceStatementOfOperations      = new ServiceOfStatementsOfOperations();
-        private SumItem _sumItem = new SumItem();
+        private Menu                          _registerMenu                  = new Menu();
+        private Menu                          _customerMenu                  = new Menu();
+        private IoHelper                      _ioHelper                      = new IoHelper();
+        private IoRegisterHelper              _ioRegisterHelper              = new IoRegisterHelper();
+        private IoTransferHelper              _ioTransferHelper              = new IoTransferHelper();
+        private AccountsService               _accountsService               = new AccountsService();
+        private CustomersService              _customersService              = new CustomersService();
+        private TransfersService              _transfersService              = new TransfersService();
+        private DatabaseManagmentService      _databaseManagmentService      = new DatabaseManagmentService();
+        private IoSerializationDesireHelper   _serializationDesireFactory    = new IoSerializationDesireHelper();
+        private IoStatementOfOperationsHelper _ioStatementOfOperationsHelper = new IoStatementOfOperationsHelper();
 
         private Customer _customer = null;
         private bool _exit = false;
-        
+        private static Timer aTimer;
+
 
         private void Run()
         {
             _databaseManagmentService.EnsureDatabaseCreation();
+            SetTimer();
             RegisterMenuOptions();
             
             do
@@ -53,8 +54,6 @@ namespace Bank
             Console.WriteLine("Choose option:");
             _registerMenu.AddOption(new MenuItem { Keys = 1, Action = SignIn,   Description = "Sign In" });
             _registerMenu.AddOption(new MenuItem { Keys = 2, Action = Register, Description = "Register" });
-
-
         }
 
         private void SignIn()
@@ -123,134 +122,34 @@ namespace Bank
 
         private void GeneratingAListOfOperations()
         {
-            var listOfCustomerAccounts = _accountsService.GetCustomerAccounts(_customer.Id);
-            if (listOfCustomerAccounts == null)
+            var customerAccounts = _ioTransferHelper.GetCustomerAccountsAndChceckItIsEmpty(_customer.Id);
+            if (customerAccounts == null)
             {
-                Console.WriteLine("You don't have accounts in our bank.");
                 return;
             }
 
             var listOfStatementOfOperations = new List<StatementOfOperations>();
 
-            foreach (var account in listOfCustomerAccounts)
+            foreach (var account in customerAccounts)
             {
-                var listOfOutgoingTransfersFromAccount = _transfersService.GetTransfersOutgoingFromTheAccount(account);
-                var listOfIncomingTransfersToAccount = _transfersService.GetIncomingTransfersToTheAccount(account);
-
-                var sumOfTransfersSentToSpecificAccounts = listOfOutgoingTransfersFromAccount
-                    .GroupBy(x => new { x.TargetAccount })
-                    .Select(g =>
-                            new SumItem
-                            {
-                                Account = g.Key.TargetAccount,
-                                SumOfTransfers = g.Sum(x => x.Amount)
-                            });
-                //.OrderBy(x => x.SourceAccount);
-
                 Console.WriteLine();
                 Console.WriteLine($"For the account {account.Name} number {account.Number}:");
-                Console.WriteLine();
-                Console.WriteLine("Total value of transfers sent to specific bank accounts:");
-                foreach (var sum in sumOfTransfersSentToSpecificAccounts)
-                {
-                    Console.WriteLine($"- in total {sum.SumOfTransfers}$ was sent to the account: {sum.Account}");
-                }
 
-
-                var sumOfTransfersIncomingFromSpecificAccounts = listOfIncomingTransfersToAccount
-                    .GroupBy(y => new { y.SourceAccount })
-                    .Select(g =>
-                        new SumItem
-                        {
-                            Account = g.Key.SourceAccount,
-                            SumOfTransfers = g.Sum(x => x.Amount)
-                        });
-                //.OrderBy(x => x.TargetAccount);
-
-                Console.WriteLine();
-                Console.WriteLine("Total value of transfers received from specific bank accounts:");
-                foreach (var sum in sumOfTransfersIncomingFromSpecificAccounts)
-                {
-                    Console.WriteLine($"- a total of {sum.SumOfTransfers}$ was received from the account: {sum.Account}");
-                }
-
-
-                var sumOfOutgoingTransfers = listOfOutgoingTransfersFromAccount
-                    .Sum(x => x.Amount);
-
-                Console.WriteLine();
-                Console.WriteLine($"Total value of outgoing transfers is {sumOfOutgoingTransfers}.");
-
-                var sumOfIncomingTransfers = listOfIncomingTransfersToAccount
-                    .Sum(x => x.Amount);
-
-                Console.WriteLine($"Total value of incoming transfers is {sumOfIncomingTransfers}.");
-
-                var maxValoueOfOutgoingTransfers = listOfOutgoingTransfersFromAccount
-                    .Max(x => x.Amount);
-
-                Console.WriteLine($"The highest value of an outgoing transfer: {maxValoueOfOutgoingTransfers}$");
-                
-                var minValoueOfOutgoingTransfers = listOfOutgoingTransfersFromAccount
-                    .Min(x => x.Amount);
-
-                Console.WriteLine($"The lowest value of an outgoing transfer: {minValoueOfOutgoingTransfers}$");
-                
-                var averageValoueOfOutgoingTransfers = Math.Round(listOfOutgoingTransfersFromAccount.Average(x => x.Amount),2);
-
-                Console.WriteLine($"The average value of an outgoing transfer: {averageValoueOfOutgoingTransfers}$");
-                Console.WriteLine();
-
-                StatementOfOperations statementOfOperationForAccount = new StatementOfOperations
-                {
-                    ForAccount = account.Number,
-                    TotalValueOutgoingTransfersToSpecificAccounts = sumOfTransfersSentToSpecificAccounts,
-                    TotalValueIncomingTransfersFromSpecificAccounts = sumOfTransfersIncomingFromSpecificAccounts,
-                    TotalValueOutgoingTransfers = sumOfOutgoingTransfers,
-                    TotalValueIncomingTransfers = sumOfIncomingTransfers,
-                    HigestValueOutgoingTransfers = maxValoueOfOutgoingTransfers,
-                    LowestValueOutgoingTransfers = minValoueOfOutgoingTransfers,
-                    AverageValueOutgoingTransfers = averageValoueOfOutgoingTransfers,
-                };
+                var statementOfOperationForAccount = _ioStatementOfOperationsHelper.GetStatementOfOperationForAccount(account);
 
                 listOfStatementOfOperations.Add(statementOfOperationForAccount);
             }
 
-
-
-
-
+            Console.WriteLine();
             var desire = _ioHelper.GetSerializationDesireFromUser("Do you want to export the operation statement to a file?");
-            switch (desire)
-            {
-                case BankTransfers.BusinessLayer.Serializers.SerializationDesire.Yes:
-                    DoSerialization(listOfStatementOfOperations);
-                    break;
-                case BankTransfers.BusinessLayer.Serializers.SerializationDesire.No:
-                    break;
-                default:
-                    throw new Exception("Unknown serialization format");
-                    
-            }
-
-        }
-
-        private void DoSerialization(List<StatementOfOperations> listOfStatementOfOperations)
-        {
-            var targetPath = _ioHelper.GetTextFromUser("Enter target path");
-            if (_serviceStatementOfOperations.SerializeStatementOfOperations(targetPath, listOfStatementOfOperations))
-            {
-                Console.WriteLine("The file with operation exported successfull");
-            }
-            else
-            {
-                Console.WriteLine("Error during the file operations export");
-            }
+            Console.WriteLine();
+            
+            _serializationDesireFactory.ImplementationOfSerializationDecision(desire, listOfStatementOfOperations);
         }
 
         private void CheckTheHistoryOfTransfers()
         {
-            var history = _transfersService.GetTransfers(_customer.Id);
+            var history = _transfersService.GetAllTransfersForCustomer(_customer.Id);
             if (history.Count == 0)
             {
                 Console.WriteLine();
@@ -275,12 +174,9 @@ namespace Bank
 
         private void PrintAccounts()
         {
-            var customerAccounts = _accountsService.GetCustomerAccounts(_customer.Id);
-
-            if (customerAccounts.Count == 0)
+            var customerAccounts = _ioTransferHelper.GetCustomerAccountsAndChceckItIsEmpty(_customer.Id);
+            if (customerAccounts == null)
             {
-                Console.WriteLine();
-                _ioHelper.WriteString("No accounts has been created");
                 return;
             }
 
@@ -320,13 +216,14 @@ namespace Bank
                 TypOfTransfer = "External transfer",
                 SourceAccount = sourceAccount.Number,
                 TargetAccount = targetGuid,
-                //TransferToOurBankAccount = transferToOurBankAccount,
             };
             _ioHelper.WriteString($"Date of the transfer: {newTransfer.DateOfTheTransfer}");
 
             var targetGuidIsAccountInOurBank = _ioTransferHelper.CheckingIfTargetGuidIsAccountInOurBank(_customer.Id, targetGuid);      //ulepszyć!!!!
             if (targetGuidIsAccountInOurBank == null)
             {
+                //dodać Timer
+
                 var currentBalance = _transfersService.ReductionOfSourceAccountBalance(sourceAccount.Id, amount);
                 _ioHelper.WriteString($"Account: \"{sourceAccount.Name}\" - Balance: {currentBalance}$");
 
@@ -408,6 +305,18 @@ namespace Bank
 
             _accountsService.AddAccount(newAccount);
             _ioHelper.WriteString($"\nAccount \"{newAccount.Name}\" added successfully");
+        }
+
+        public static void SetTimer()
+        {
+            aTimer = new Timer(2000);
+            aTimer.Elapsed += SentTransfers;
+
+        }
+
+        private static void SentTransfers(object sender, ElapsedEventArgs e)
+        {
+            throw new NotImplementedException();
         }
     }
 }
