@@ -1,11 +1,28 @@
-﻿using BankTransfers.BusinessLayer.Serializers;
+﻿using BankTransfers.BusinessLayer;
+using BankTransfers.BusinessLayer.Serializers;
 using BankTransfers.DataLayer.Models;
 using System;
 using System.Collections.Generic;
 
 namespace Bank
 {
-    public class IoHelper
+    public interface IIoHelper
+    {
+        public Guid GetGuidFromUser(string message);
+        public double GetDoubleFromUser(string message);
+        public bool CheckingIfIsNullOrWhiteSpace(string accountName);
+
+        public SerializationDesire GetSerializationDesireFromUser(string message);
+        public Guid GenerateGuidToUser();
+        public int GetIntFromUser(string message);
+
+        public string GetTextFromUser(string message);
+
+        public void WriteString(string message);
+
+    }
+
+    public class IoHelper : IIoHelper
     {
         public Guid GetGuidFromUser(string message)
         {

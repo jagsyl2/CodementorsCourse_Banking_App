@@ -14,5 +14,14 @@ namespace BankTransfers.DataLayer.Models
         public Guid SourceAccount { get; set; }
         public Guid TargetAccount { get; set; }
 
+        public Transfer()
+        {
+        }
+
+        public Transfer(int id, double amount)
+        {
+            Id = id;
+            Amount = amount;
+        }
     }
 }

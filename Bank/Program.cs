@@ -17,7 +17,7 @@ namespace Bank
         private Menu                          _customerMenu                  = new Menu();
         private IoHelper                      _ioHelper                      = new IoHelper();
         private IoRegisterHelper              _ioRegisterHelper              = new IoRegisterHelper();
-        private IoTransferHelper              _ioTransferHelper              = new IoTransferHelper();
+        private IoTransferHelper              _ioTransferHelper              = new IoTransferHelper(new IoHelper(), new AccountsService());
         private AccountsService               _accountsService               = new AccountsService();
         private CustomersService              _customersService              = new CustomersService();
         private TransfersService              _transfersService              = new TransfersService();
@@ -122,8 +122,8 @@ namespace Bank
 
         private void GeneratingAListOfOperations()
         {
-            var customerAccounts = _ioTransferHelper.GetCustomerAccountsAndChceckItIsEmpty(_customer.Id);
-            if (customerAccounts == null)
+            var customerAccounts = _accountsService.GetCustomerAccounts(_customer.Id);
+            if (_ioTransferHelper.ChceckIfListIsEmpty(customerAccounts) == true)
             {
                 return;
             }
@@ -132,10 +132,9 @@ namespace Bank
 
             foreach (var account in customerAccounts)
             {
-                Console.WriteLine();
-                Console.WriteLine($"For the account {account.Name} number {account.Number}:");
-
                 var statementOfOperationForAccount = _ioStatementOfOperationsHelper.GetStatementOfOperationForAccount(account);
+
+                _ioStatementOfOperationsHelper.PrintStatementOfOperations(account, statementOfOperationForAccount);
 
                 listOfStatementOfOperations.Add(statementOfOperationForAccount);
             }
@@ -174,8 +173,8 @@ namespace Bank
 
         private void PrintAccounts()
         {
-            var customerAccounts = _ioTransferHelper.GetCustomerAccountsAndChceckItIsEmpty(_customer.Id);
-            if (customerAccounts == null)
+            var customerAccounts = _accountsService.GetCustomerAccounts(_customer.Id);
+            if (_ioTransferHelper.ChceckIfListIsEmpty(customerAccounts) == true)
             {
                 return;
             }

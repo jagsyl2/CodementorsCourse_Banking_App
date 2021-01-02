@@ -6,10 +6,18 @@ using System.Linq;
 
 namespace Bank
 {
-    class IoTransferHelper
+    public class IoTransferHelper
     {
-        private IoHelper _ioHelper = new IoHelper();
-        private AccountsService _accountsService = new AccountsService();
+        private IIoHelper _ioHelper;
+        private IAccountService _accountsService;
+
+        public IoTransferHelper(
+            IIoHelper ioHelper,
+            IAccountService accountsService)
+        {
+            _ioHelper = ioHelper;
+            _accountsService = accountsService;
+        }
 
         public double GetAmountFromUser(Account account, List<Transfer> scheduledTransfers)
         {
@@ -153,18 +161,16 @@ namespace Bank
             return true;
         }
 
-        public List<Account> GetCustomerAccountsAndChceckItIsEmpty(int customerId)
+        public bool ChceckIfListIsEmpty(List<Account> accounts)
         {
-            var customerAccounts = _accountsService.GetCustomerAccounts(customerId);
-
-            if (customerAccounts.Count == 0)
+            if (accounts.Count == 0)
             {
                 Console.WriteLine();
                 _ioHelper.WriteString("You don't have accounts in our bank.");
-                return null;
+                return true;
             }
 
-            return customerAccounts;
+            return false;
         }
 
         public void PrintCustomerAccounts(List<Account> customerAccounts, List<Transfer> scheduledTransfers)
