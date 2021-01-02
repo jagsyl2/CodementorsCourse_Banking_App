@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Timers;
-using BankingProject.OutgoingTransfers.Sender;
 using BankTransfers.BusinessLayer;
 using BankTransfers.DataLayer.Models;
-using Newtonsoft.Json;
 
 namespace Bank
 {
@@ -26,15 +24,17 @@ namespace Bank
         private DatabaseManagmentService      _databaseManagmentService      = new DatabaseManagmentService();
         private IoSerializationDesireHelper   _serializationDesireFactory    = new IoSerializationDesireHelper();
         private IoStatementOfOperationsHelper _ioStatementOfOperationsHelper = new IoStatementOfOperationsHelper();
+        private List<Transfer>                _listOfTransfers               = new List<Transfer>();
 
         private Customer _customer = null;
         private bool _exit = false;
-        private static Timer aTimer;
+        private static Timer aTimer = new Timer(300000);
 
 
         private void Run()
         {
             _databaseManagmentService.EnsureDatabaseCreation();
+            aTimer.Start();
             SetTimer();
             RegisterMenuOptions();
             
@@ -180,7 +180,7 @@ namespace Bank
                 return;
             }
 
-            _ioHelper.PrintCustomerAccounts(customerAccounts);
+            _ioTransferHelper.PrintCustomerAccounts(customerAccounts, _listOfTransfers);
             Console.WriteLine();
         }
 
@@ -199,12 +199,18 @@ namespace Bank
                 return;
             }
 
-            _ioHelper.PrintCustomerAccounts(customerAccounts);
+            _ioTransferHelper.PrintCustomerAccounts(customerAccounts, _listOfTransfers);
             
             var sourceAccount = _ioTransferHelper.GetAccountFromUser("Make an outgoing transfer:", customerAccounts);
-            var amount = _ioTransferHelper.GetAmountFromUser(sourceAccount);
-            var targetGuid = _ioHelper.GetGuidFromUser("Provide the target account number (the number of GUID)");
+            var amount = _ioTransferHelper.GetAmountFromUser(sourceAccount, _listOfTransfers);
 
+            Guid targetGuid;
+            do
+            {
+                targetGuid = _ioHelper.GetGuidFromUser("Provide the target account number (the number of GUID)");
+            }
+            while (_ioTransferHelper.CheckingIfTargetGuidIsCustomerAccount(_customer.Id, targetGuid));
+            
             var title = _ioTransferHelper.GetNotNullTextFromUser("Transfer title");
 
             Transfer newTransfer = new Transfer()
@@ -212,34 +218,51 @@ namespace Bank
                 CustomerId = _customer.Id,
                 Title = title,
                 Amount = amount,
-                DateOfTheTransfer = DateTime.Now,
                 TypOfTransfer = "External transfer",
                 SourceAccount = sourceAccount.Number,
                 TargetAccount = targetGuid,
             };
-            _ioHelper.WriteString($"Date of the transfer: {newTransfer.DateOfTheTransfer}");
+            
 
-            var targetGuidIsAccountInOurBank = _ioTransferHelper.CheckingIfTargetGuidIsAccountInOurBank(_customer.Id, targetGuid);      //ulepszyć!!!!
-            if (targetGuidIsAccountInOurBank == null)
+            if (!_ioTransferHelper.CheckingIfTargetGuidIsAccountInOurBank(_customer.Id, targetGuid))
             {
-                //dodać Timer
+                _listOfTransfers.Add(newTransfer);
+                _ioHelper.WriteString("Your transfer has been accepted for processing.");
 
-                var currentBalance = _transfersService.ReductionOfSourceAccountBalance(sourceAccount.Id, amount);
-                _ioHelper.WriteString($"Account: \"{sourceAccount.Name}\" - Balance: {currentBalance}$");
-
-                var sender = new GlobalOutgoingTransfersSender();
-                var jsonData = JsonConvert.SerializeObject(newTransfer);
-                sender.Send(jsonData);
             }
             else
             {
-                var newAccountsBalance = _transfersService.BalanceChangeOfAccounts(sourceAccount.Id, targetGuidIsAccountInOurBank.Id, amount);
-                var currentBalanceSource = newAccountsBalance[sourceAccount.Id];
+                newTransfer.DateOfTheTransfer = DateTime.Now;
+                _ioHelper.WriteString($"Date of the transfer: {newTransfer.DateOfTheTransfer}");
+
+                _transfersService.BalanceChangeOfAccounts(sourceAccount.Number, targetGuid, amount);
+                var currentBalanceSource = _accountsService.GetCurrentBalanceOfAccount(sourceAccount.Id);
 
                 _ioHelper.WriteString($"Account: \"{sourceAccount.Name}\" - Balance: {currentBalanceSource}$");
+                
+                _transfersService.AddTransfer(newTransfer);
             }
+        }
 
-            _transfersService.AddTransfer(newTransfer);
+        public void SetTimer()
+        {
+            aTimer.Elapsed += SendTransfers;
+            aTimer.AutoReset = true;
+            aTimer.Enabled = true;
+        }
+
+        private void SendTransfers(object source, ElapsedEventArgs e)
+        {
+            foreach (var transfer in _listOfTransfers)
+            {
+                _transfersService.ReductionOfSourceAccountBalance(transfer.SourceAccount, transfer.Amount);
+                
+                transfer.DateOfTheTransfer = e.SignalTime;
+                _transfersService.SendTransferOut(transfer);
+
+                _transfersService.AddTransfer(transfer);
+            }
+            _listOfTransfers.Clear();
         }
 
         private void DomesticTransfer()
@@ -257,11 +280,11 @@ namespace Bank
                 return;
             }
 
-            _ioHelper.PrintCustomerAccounts(customerAccounts);
+            _ioTransferHelper.PrintCustomerAccounts(customerAccounts, _listOfTransfers);
 
             var sourceAccount = _ioTransferHelper.GetAccountFromUser("Make a domestic transfer:", customerAccounts);
             var targetAccount = _ioTransferHelper.GetAndCheckIfTheAccountIsNonSourceAccount(customerAccounts, sourceAccount.Id);
-            var amount = _ioTransferHelper.GetAmountFromUser(sourceAccount);
+            var amount = _ioTransferHelper.GetAmountFromUser(sourceAccount, _listOfTransfers);
             var title = _ioTransferHelper.GetNotNullTextFromUser("Transfer title");
 
             Transfer newTransfer = new Transfer()
@@ -277,10 +300,10 @@ namespace Bank
 
             _ioHelper.WriteString($"Date of the transfer: {newTransfer.DateOfTheTransfer}");
 
-            var newAccountsBalance = _transfersService.BalanceChangeOfAccounts(sourceAccount.Id, targetAccount.Id, amount);
-            var currentBalanceSource = newAccountsBalance[sourceAccount.Id];
-            var currentBalanceTarget = newAccountsBalance[targetAccount.Id];
-            
+            _transfersService.BalanceChangeOfAccounts(sourceAccount.Number, targetAccount.Number, amount);
+            var currentBalanceSource = _accountsService.GetCurrentBalanceOfAccount(sourceAccount.Id);
+            var currentBalanceTarget = _accountsService.GetCurrentBalanceOfAccount(targetAccount.Id);
+
             Console.WriteLine($"Account: \"{sourceAccount.Name}\" - Balance: {currentBalanceSource}$");
             _ioHelper.WriteString($"Account: \"{targetAccount.Name}\" - Balance: {currentBalanceTarget}$");
 
@@ -305,18 +328,6 @@ namespace Bank
 
             _accountsService.AddAccount(newAccount);
             _ioHelper.WriteString($"\nAccount \"{newAccount.Name}\" added successfully");
-        }
-
-        public static void SetTimer()
-        {
-            aTimer = new Timer(2000);
-            aTimer.Elapsed += SentTransfers;
-
-        }
-
-        private static void SentTransfers(object sender, ElapsedEventArgs e)
-        {
-            throw new NotImplementedException();
         }
     }
 }

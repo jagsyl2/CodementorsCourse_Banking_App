@@ -3,7 +3,6 @@ using BankTransfers.DataLayer.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Timers;
 
 namespace Bank
 {
@@ -12,8 +11,10 @@ namespace Bank
         private IoHelper _ioHelper = new IoHelper();
         private AccountsService _accountsService = new AccountsService();
 
-        public double GetAmountFromUser(Account account)
+        public double GetAmountFromUser(Account account, List<Transfer> scheduledTransfers)
         {
+            double sumOfScheduledTransfers = CountSumOfScheduledTransfers(account, scheduledTransfers);
+
             bool correctAmount;
             double amount;
             do
@@ -21,7 +22,7 @@ namespace Bank
                 amount = _ioHelper.GetDoubleFromUser("Transfer amount");
                 correctAmount = true;
 
-                if (amount <= 0 || amount > account.Balance)
+                if (amount <= 0 || amount > account.Balance - sumOfScheduledTransfers)
                 {
                     _ioHelper.WriteString("Wrong amount (below 0$ or insufficient funds on the account) - try again...");
                     correctAmount = false;
@@ -30,6 +31,21 @@ namespace Bank
             while (correctAmount == false);
 
             return amount;
+        }
+
+        public double CountSumOfScheduledTransfers(Account account, List<Transfer> scheduledTransfers)
+        {
+            double sum = 0;
+
+            foreach (var transfer in scheduledTransfers)
+            {
+                if (transfer.SourceAccount == account.Number)
+                {
+                    sum += transfer.Amount;
+                }
+            }
+
+            return sum;
         }
 
         public Account GetAccountFromUser(string message, List<Account> customerAccounts)
@@ -112,7 +128,19 @@ namespace Bank
             return title;
         }
 
-        public Account CheckingIfTargetGuidIsAccountInOurBank(int CustomerId, Guid accountNumber)
+        internal bool CheckingIfTargetGuidIsCustomerAccount(int customerId, Guid targetAccount)
+        {
+            var customerAccounts = _accountsService.GetCustomerAccounts(customerId);
+
+            if (customerAccounts.Any(x => x.Number == targetAccount))
+            {
+                Console.WriteLine("Check the account number - this is your account!");
+                return true;
+            }
+            return false;
+        }
+
+        public bool CheckingIfTargetGuidIsAccountInOurBank(int CustomerId, Guid accountNumber)
         {
             var listOfAllAccounts = _accountsService.GetAllAccounts();
 
@@ -120,12 +148,9 @@ namespace Bank
                 .Where(x => x.CustomerId != CustomerId)
                 .Any(x => x.Number == accountNumber))
             {
-                return null;
+                return false;
             }
-            else
-            {
-               return listOfAllAccounts.FirstOrDefault(x => x.Number == accountNumber);
-            }
+            return true;
         }
 
         public List<Account> GetCustomerAccountsAndChceckItIsEmpty(int customerId)
@@ -140,6 +165,22 @@ namespace Bank
             }
 
             return customerAccounts;
+        }
+
+        public void PrintCustomerAccounts(List<Account> customerAccounts, List<Transfer> scheduledTransfers)
+        {
+            Console.WriteLine();
+            Console.WriteLine("Your accounts balance:");
+            foreach (var account in customerAccounts)
+            {
+                double sumOfScheduledTransfers = CountSumOfScheduledTransfers(account, scheduledTransfers);
+                PrintAccount(account, sumOfScheduledTransfers);
+            }
+        }
+
+        public void PrintAccount(Account account, double sumOfScheduledTransfers)
+        {
+            Console.WriteLine($"Number: {account.Id} - Account: \"{account.Name}\" - Balance: {account.Balance}$ - Account Number: {account.Number} - Available funds: {account.Balance - sumOfScheduledTransfers}");
         }
     }
 }

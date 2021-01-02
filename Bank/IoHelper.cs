@@ -7,21 +7,6 @@ namespace Bank
 {
     public class IoHelper
     {
-        public void PrintCustomerAccounts(List<Account> customerAccounts)
-        {
-            Console.WriteLine();
-            Console.WriteLine("Your accounts balance:");
-            foreach (var account in customerAccounts)
-            {
-                PrintAccount(account);
-            }
-        }
-
-        public void PrintAccount(Account account)
-        {
-            Console.WriteLine($"Number: {account.Id} - Account: \"{account.Name}\" - Balance: {account.Balance}$ - Account Number: {account.Number}");
-        }
-
         public Guid GetGuidFromUser(string message)
         {
             Guid guid;

@@ -36,5 +36,16 @@ namespace BankTransfers.BusinessLayer
                     .ToList();
             }
         }
+
+        public double GetCurrentBalanceOfAccount(int accountId)
+        {
+            using (var context = new BankDbContex())
+            {
+                return context.Accounts
+                    .Where(x => x.Id == accountId)
+                    .Select(x => x.Balance)
+                    .FirstOrDefault();
+            }
+        }
     }
 }

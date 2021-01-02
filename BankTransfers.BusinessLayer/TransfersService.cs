@@ -1,5 +1,8 @@
-﻿using BankTransfers.DataLayer;
+﻿using BankingProject.OutgoingTransfers.Sender;
+using BankTransfers.DataLayer;
 using BankTransfers.DataLayer.Models;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -37,25 +40,26 @@ namespace BankTransfers.BusinessLayer
 
         public List<Transfer> GetAllTransfersForCustomer(int customerId)
         {
-            List<Transfer> listOfIncominAccounts = new List<Transfer>();
+            List<Transfer> listOfAllTransfers = new List<Transfer>();
 
             using (var context = new BankDbContex())
             {
+                listOfAllTransfers.AddRange(GetTransfers(customerId));
+
                 var listOfAccounts = _accountsService.GetCustomerAccounts(customerId);
-
-                listOfIncominAccounts.AddRange(GetTransfers(customerId));
-
                 foreach (var account in listOfAccounts)
                 {
-                    var list2 = context.Transfers
+                    var listOfIncomingTransfers = context.Transfers
                         .Where(transfer => transfer.CustomerId != customerId && transfer.TargetAccount == account.Number)
                         .ToList();
-                    listOfIncominAccounts.AddRange(list2);
+                    
+                    listOfAllTransfers.AddRange(listOfIncomingTransfers);
                 }
             }
-            listOfIncominAccounts.OrderBy(x => x.DateOfTheTransfer);
 
-            return listOfIncominAccounts;
+            listOfAllTransfers.OrderBy(x => x.DateOfTheTransfer);
+
+            return listOfAllTransfers;
         }
 
         public List<Transfer> GetTransfersOutgoingFromTheAccount(Account account)
@@ -78,43 +82,43 @@ namespace BankTransfers.BusinessLayer
             }
         }
 
-        public double ReductionOfSourceAccountBalance(int accoundId, double amount)
+        public void ReductionOfSourceAccountBalance(Guid accountNumber, double amount)
         {
             using (var context = new BankDbContex())
             {
                 var sourceAccount = context.Accounts
-                    .FirstOrDefault(account => account.Id == accoundId);
+                    .FirstOrDefault(account => account.Number == accountNumber);
 
                 sourceAccount.Balance -= amount;
 
                 context.SaveChanges();
-                return sourceAccount.Balance;
             }
         }
 
-        public Dictionary<int, double> BalanceChangeOfAccounts(int sourceAccountId, int targetAccountId, double amount)
+        public void BalanceChangeOfAccounts(Guid sourceNumber, Guid targetNumber, double amount)
         {
             using (var context = new BankDbContex())
             {
                 var sourceAccount = context.Accounts
-                    .Where(account => account.Id == sourceAccountId)
+                    .Where(account => account.Number == sourceNumber)
                     .FirstOrDefault();
 
                 var targetAccount = context.Accounts
-                    .Where(account => account.Id == targetAccountId)
+                    .Where(account => account.Number == targetNumber)
                     .FirstOrDefault();
 
                 sourceAccount.Balance -= amount;
                 targetAccount.Balance += amount;
 
                 context.SaveChanges();
-
-                Dictionary<int, double> newAccountsBalance = new Dictionary<int, double>();
-                newAccountsBalance[sourceAccount.Id] = sourceAccount.Balance;
-                newAccountsBalance[targetAccount.Id] = targetAccount.Balance;
-                
-                return newAccountsBalance;
             }
+        }
+
+        public void SendTransferOut(Transfer transfer)
+        {
+            var sender = new GlobalOutgoingTransfersSender();
+            var jsonData = JsonConvert.SerializeObject(transfer);
+            sender.Send(jsonData);
         }
     }
 }
