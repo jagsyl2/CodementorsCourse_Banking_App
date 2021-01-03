@@ -75,7 +75,7 @@ namespace Bank
             _ioStatementOfOperationsHelper = ioStatementOfOperationsHelper;
         }
 
-        private List<Transfer> _listOfTransfers = new List<Transfer>();
+        private List<Transfer> _listOfPendingTransfers = new List<Transfer>();
         public Customer Customer { get; set; }
 
         private bool _exit = false;
@@ -216,7 +216,7 @@ namespace Bank
                                  GUID target account:   {transfers.TargetAccount}
                                  Transfer Title:        {transfers.Title}  
                                  Transfers Amount:      {transfers.Amount}
-                                 Type of transfer:      {transfers.TypOfTransfer}";
+                                 Type of transfer:      {transfers.TypeOfTransfer}";
                 _ioHelper.WriteString(text);
             }
         }
@@ -229,7 +229,7 @@ namespace Bank
                 return;
             }
 
-            _ioTransferHelper.PrintCustomerAccounts(customerAccounts, _listOfTransfers);
+            _ioTransferHelper.PrintCustomerAccounts(customerAccounts, _listOfPendingTransfers);
             Console.WriteLine();
         }
 
@@ -248,10 +248,10 @@ namespace Bank
                 return;
             }
 
-            _ioTransferHelper.PrintCustomerAccounts(customerAccounts, _listOfTransfers);
+            _ioTransferHelper.PrintCustomerAccounts(customerAccounts, _listOfPendingTransfers);
             
             var sourceAccount = _ioTransferHelper.GetAccountFromUser("Make an outgoing transfer:", customerAccounts);
-            var amount = _ioTransferHelper.GetAmountFromUser(sourceAccount, _listOfTransfers);
+            var amount = _ioTransferHelper.GetAmountFromUser(sourceAccount, _listOfPendingTransfers);
 
             Guid targetGuid;
             do
@@ -267,7 +267,7 @@ namespace Bank
                 CustomerId = Customer.Id,
                 Title = title,
                 Amount = amount,
-                TypOfTransfer = "External transfer",
+                TypeOfTransfer = "External transfer",
                 SourceAccount = sourceAccount.Number,
                 TargetAccount = targetGuid,
             };
@@ -275,7 +275,7 @@ namespace Bank
 
             if (!_ioTransferHelper.CheckingIfTargetGuidIsAccountInOurBank(Customer.Id, targetGuid))
             {
-                _listOfTransfers.Add(newTransfer);
+                _listOfPendingTransfers.Add(newTransfer);
                 _ioHelper.WriteString("Your transfer has been accepted for processing.");
 
             }
@@ -302,16 +302,17 @@ namespace Bank
 
         private void SendTransfers(object source, ElapsedEventArgs e)
         {
-            foreach (var transfer in _listOfTransfers)
+            foreach (var transfer in _listOfPendingTransfers)
             {
                 _transfersService.ReductionOfSourceAccountBalance(transfer.SourceAccount, transfer.Amount);
                 
                 transfer.DateOfTheTransfer = e.SignalTime;
+
                 _transfersService.SendTransferOut(transfer);
 
                 _transfersService.AddTransfer(transfer);
             }
-            _listOfTransfers.Clear();
+            _listOfPendingTransfers.Clear();
         }
 
         private void DomesticTransfer()
@@ -329,11 +330,11 @@ namespace Bank
                 return;
             }
 
-            _ioTransferHelper.PrintCustomerAccounts(customerAccounts, _listOfTransfers);
+            _ioTransferHelper.PrintCustomerAccounts(customerAccounts, _listOfPendingTransfers);
 
             var sourceAccount = _ioTransferHelper.GetAccountFromUser("Make a domestic transfer:", customerAccounts);
             var targetAccount = _ioTransferHelper.GetAndCheckIfTheAccountIsNonSourceAccount(customerAccounts, sourceAccount.Id);
-            var amount = _ioTransferHelper.GetAmountFromUser(sourceAccount, _listOfTransfers);
+            var amount = _ioTransferHelper.GetAmountFromUser(sourceAccount, _listOfPendingTransfers);
             var title = _ioTransferHelper.GetNotNullTextFromUser("Transfer title");
 
             Transfer newTransfer = new Transfer()
@@ -342,7 +343,7 @@ namespace Bank
                 Title = title,
                 Amount = amount,
                 DateOfTheTransfer = DateTime.Now,
-                TypOfTransfer = "Internal transfer",
+                TypeOfTransfer = "Internal transfer",
                 SourceAccount = sourceAccount.Number,
                 TargetAccount = targetAccount.Number,
             };

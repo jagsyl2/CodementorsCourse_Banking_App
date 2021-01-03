@@ -5,7 +5,7 @@ using Moq;
 using NUnit.Framework;
 using System.Collections.Generic;
 
-namespace Bank.Tests.BusinessLayer
+namespace Bank.Tests.Bank
 {
     public class BankTransfersTests
     {
@@ -58,7 +58,7 @@ namespace Bank.Tests.BusinessLayer
 
             var accountsServiceMock = new Mock<IAccountsService>();
             accountsServiceMock
-                .Setup(repo => repo.GetCustomerAccounts(customer.Id))
+                .Setup(x => x.GetCustomerAccounts(customer.Id))
                 .Returns(listOfAccounts);
 
             var ioTransferHelperMock = new Mock<IIoTransferHelper>();
@@ -116,7 +116,7 @@ namespace Bank.Tests.BusinessLayer
 
             var accountsServiceMock = new Mock<IAccountsService>();
             accountsServiceMock
-                .Setup(repo => repo.GetCustomerAccounts(customer.Id))
+                .Setup(x => x.GetCustomerAccounts(customer.Id))
                 .Returns(listOfAccounts);
 
             var ioTransferHelperMock = new Mock<IIoTransferHelper>();

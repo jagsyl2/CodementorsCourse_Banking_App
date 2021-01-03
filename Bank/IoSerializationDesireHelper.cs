@@ -47,7 +47,6 @@ namespace Bank
             else
             {
                 _ioHelper.WriteString("Error during the file operations export");
-
             }
         }
     }

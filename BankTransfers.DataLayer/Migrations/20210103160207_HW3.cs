@@ -2,7 +2,7 @@
 
 namespace BankTransfers.DataLayer.Migrations
 {
-    public partial class tapeOfTransfer : Migration
+    public partial class HW3 : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {

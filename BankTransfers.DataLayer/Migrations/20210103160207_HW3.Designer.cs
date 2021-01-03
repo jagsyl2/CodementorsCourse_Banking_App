@@ -10,8 +10,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BankTransfers.DataLayer.Migrations
 {
     [DbContext(typeof(BankDbContex))]
-    [Migration("20201219210005_nowa")]
-    partial class nowa
+    [Migration("20210103160207_HW3")]
+    partial class HW3
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -93,7 +93,7 @@ namespace BankTransfers.DataLayer.Migrations
                     b.Property<string>("Title")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("TypOfTransfer")
+                    b.Property<string>("TypeOfTransfer")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");

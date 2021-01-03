@@ -19,20 +19,12 @@ namespace Bank
         public bool ChceckIfListIsEmpty(List<Account> accounts);
         public void PrintCustomerAccounts(List<Account> customerAccounts, List<Transfer> scheduledTransfers);
         public void PrintAccount(Account account, double sumOfScheduledTransfers);
-
     }
+
     public class IoTransferHelper : IIoTransferHelper
     {
-        private IIoHelper _ioHelper = new IoHelper();
-        private IAccountsService _accountsService = new AccountsService();
-
-        //public IoTransferHelper(
-        //    IIoHelper ioHelper,
-        //    IAccountsService accountsService)
-        //{
-        //    _ioHelper = ioHelper;
-        //    _accountsService = accountsService;
-        //}
+        private IoHelper _ioHelper = new IoHelper();
+        private AccountsService _accountsService = new AccountsService();
 
         public double GetAmountFromUser(Account account, List<Transfer> scheduledTransfers)
         {
@@ -109,7 +101,7 @@ namespace Bank
             {
                 int targetAccountId = _ioHelper.GetIntFromUser("Provide the target account number");
 
-                targetAccount = customerAccounts.First(account => targetAccountId == account.Id);
+                targetAccount = customerAccounts.FirstOrDefault(account => targetAccountId == account.Id);
 
                 if (targetAccount == null)
                 {
