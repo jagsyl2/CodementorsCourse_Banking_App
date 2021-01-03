@@ -8,9 +8,23 @@ using System.Linq;
 
 namespace BankTransfers.BusinessLayer
 {
-    public class TransfersService
+    public interface ITransfersService
+    {
+        public void AddTransfer(Transfer transfer);
+        public List<Transfer> GetAllTransfers();
+        public List<Transfer> GetTransfers(int customerId);
+        public List<Transfer> GetAllTransfersForCustomer(int customerId);
+        public List<Transfer> GetTransfersOutgoingFromTheAccount(Account account);
+        public List<Transfer> GetIncomingTransfersToTheAccount(Account account);
+        public void ReductionOfSourceAccountBalance(Guid accountNumber, double amount);
+        public void BalanceChangeOfAccounts(Guid sourceNumber, Guid targetNumber, double amount);
+        public void SendTransferOut(Transfer transfer);
+    }
+
+    public class TransfersService : ITransfersService
     {
         private AccountsService _accountsService = new AccountsService();
+
         public void AddTransfer(Transfer transfer)
         {
             using (var context = new BankDbContex())

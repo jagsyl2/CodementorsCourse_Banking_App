@@ -10,7 +10,7 @@ namespace BankTransfers.BusinessLayer
         public IEnumerable<SumItem> TotalValueIncomingTransfersFromSpecificAccounts;
         public double TotalValueOutgoingTransfers;
         public double TotalValueIncomingTransfers;
-        public double? HigestValueOutgoingTransfers;
+        public double HigestValueOutgoingTransfers;
         public double LowestValueOutgoingTransfers;
         public double AverageValueOutgoingTransfers;
     }

@@ -1,15 +1,27 @@
 ﻿using BankTransfers.BusinessLayer;
 using BankTransfers.DataLayer.Models;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Bank
 {
-    public class IoStatementOfOperationsHelper
+    public interface IIoStatementOfOperationsHelper
     {
-        private TransfersService _transfersService = new TransfersService();
-        private StatementsOfOperationsService _statementsOfOperationsService = new StatementsOfOperationsService();
+        public StatementOfOperations GetStatementOfOperationForAccount(Account account);
+        public void PrintStatementOfOperations(Account account, StatementOfOperations statement);
+    }
+
+    public class IoStatementOfOperationsHelper : IIoStatementOfOperationsHelper
+    {
+        private ITransfersService _transfersService = new TransfersService();
+        private IStatementsOfOperationsService _statementsOfOperationsService = new StatementsOfOperationsService();
+
+        public IoStatementOfOperationsHelper(
+            ITransfersService transfersService,
+            IStatementsOfOperationsService statementsOfOperationsService)
+                {
+                    _transfersService = transfersService;
+                    _statementsOfOperationsService = statementsOfOperationsService;
+                }
 
         public StatementOfOperations GetStatementOfOperationForAccount(Account account)
         {

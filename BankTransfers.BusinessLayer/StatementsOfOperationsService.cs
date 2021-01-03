@@ -7,7 +7,18 @@ using System.Linq;
 
 namespace BankTransfers.BusinessLayer
 {
-    public class StatementsOfOperationsService
+    public interface IStatementsOfOperationsService
+    {
+        public bool SerializeStatementOfOperations(string targetDirectoryPath, List<StatementOfOperations> list);
+        public IEnumerable<SumItem> CountSumOfTransfersSentToSpecificAccounts(List<Transfer> listOfOutgoingTransfers, Guid number);
+        public IEnumerable<SumItem> CountSumOfTransfersIncomingFromSpecificAccounts(List<Transfer> listOfIncomingTransfers, Guid number);
+        public double CountSumOfTransfers(List<Transfer> list);
+        public double GetMaxValoueOfTransfers(List<Transfer> list);
+        public double GetMinValoueOfTransfers(List<Transfer> list);
+        public double GetAverageValoueOfTransfers(List<Transfer> list);
+    }
+
+    public class StatementsOfOperationsService : IStatementsOfOperationsService
     {
         private JsonSerializer _serializer = new JsonSerializer();
 

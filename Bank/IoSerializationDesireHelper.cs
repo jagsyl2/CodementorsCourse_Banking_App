@@ -4,13 +4,19 @@ using System.Collections.Generic;
 
 namespace Bank
 {
+    public interface IIoSerializationDesireHelper
+    {
+        public void ImplementationOfSerializationDecision(SerializationDesire desire, List<StatementOfOperations> list);
+        public void DoSerialization(List<StatementOfOperations> list);
+    }
+
     public enum SerializationDesire
     {
         Yes,
         No
     }
 
-    public class IoSerializationDesireHelper
+    public class IoSerializationDesireHelper : IIoSerializationDesireHelper
     {
         private IoHelper _ioHelper = new IoHelper();
         private StatementsOfOperationsService _statementsOfOperationsService = new StatementsOfOperationsService();
@@ -30,7 +36,7 @@ namespace Bank
             }
         }
 
-        private void DoSerialization(List<StatementOfOperations> list)
+        public void DoSerialization(List<StatementOfOperations> list)
         {
             var targetPath = _ioHelper.GetTextFromUser("Enter target path");
             

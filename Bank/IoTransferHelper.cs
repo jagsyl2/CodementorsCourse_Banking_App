@@ -6,18 +6,33 @@ using System.Linq;
 
 namespace Bank
 {
-    public class IoTransferHelper
+    public interface IIoTransferHelper
     {
-        private IIoHelper _ioHelper;
-        private IAccountService _accountsService;
+        public double GetAmountFromUser(Account account, List<Transfer> scheduledTransfers);
+        public double CountSumOfScheduledTransfers(Account account, List<Transfer> scheduledTransfers);
+        public Account GetAccountFromUser(string message, List<Account> customerAccounts);
+        public Account GetAndCheckIfTheAccountIsNonSourceAccount(List<Account> customerAccounts, int sourceAccountId);
+        public bool CheckingIfThereIsAccountWithPositiveBalance(List<Account> accounts);
+        public string GetNotNullTextFromUser(string message);
+        public bool CheckingIfTargetGuidIsCustomerAccount(int customerId, Guid targetAccount);
+        public bool CheckingIfTargetGuidIsAccountInOurBank(int CustomerId, Guid accountNumber);
+        public bool ChceckIfListIsEmpty(List<Account> accounts);
+        public void PrintCustomerAccounts(List<Account> customerAccounts, List<Transfer> scheduledTransfers);
+        public void PrintAccount(Account account, double sumOfScheduledTransfers);
 
-        public IoTransferHelper(
-            IIoHelper ioHelper,
-            IAccountService accountsService)
-        {
-            _ioHelper = ioHelper;
-            _accountsService = accountsService;
-        }
+    }
+    public class IoTransferHelper : IIoTransferHelper
+    {
+        private IIoHelper _ioHelper = new IoHelper();
+        private IAccountsService _accountsService = new AccountsService();
+
+        //public IoTransferHelper(
+        //    IIoHelper ioHelper,
+        //    IAccountsService accountsService)
+        //{
+        //    _ioHelper = ioHelper;
+        //    _accountsService = accountsService;
+        //}
 
         public double GetAmountFromUser(Account account, List<Transfer> scheduledTransfers)
         {
@@ -136,7 +151,7 @@ namespace Bank
             return title;
         }
 
-        internal bool CheckingIfTargetGuidIsCustomerAccount(int customerId, Guid targetAccount)
+        public bool CheckingIfTargetGuidIsCustomerAccount(int customerId, Guid targetAccount)
         {
             var customerAccounts = _accountsService.GetCustomerAccounts(customerId);
 

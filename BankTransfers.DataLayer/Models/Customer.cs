@@ -10,6 +10,5 @@ namespace BankTransfers.DataLayer.Models
         public string Password { get; set; }
         public List<Account> Accounts { get; set; }
         public List<Transfer> Transfers { get; set; }
-
     }
 }

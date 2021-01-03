@@ -2,7 +2,12 @@
 
 namespace Bank
 {
-    class IoRegisterHelper
+    public interface IIoRegisterHelper
+    {
+        public int GetPhoneNumberFromUser(string message);
+        public string GetEMailFromUser(string message);
+    }
+    class IoRegisterHelper : IIoRegisterHelper
     {
         private IoHelper _ioHelper = new IoHelper();
         private CustomersService _customersService = new CustomersService();

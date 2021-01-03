@@ -6,16 +6,15 @@ using System.Linq;
 
 namespace BankTransfers.BusinessLayer
 {
-    public interface IAccountService
+    public interface IAccountsService
     {
         public void AddAccount(Account account);
         public List<Account> GetAllAccounts();
         public List<Account> GetCustomerAccounts(int customerId);
         public double GetCurrentBalanceOfAccount(int accountId);
-
     }
 
-    public class AccountsService : IAccountService
+    public class AccountsService : IAccountsService
     {
         public void AddAccount(Account account)
         {

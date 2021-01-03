@@ -1,8 +1,4 @@
-﻿using BankTransfers.BusinessLayer;
-using BankTransfers.BusinessLayer.Serializers;
-using BankTransfers.DataLayer.Models;
-using System;
-using System.Collections.Generic;
+﻿using System;
 
 namespace Bank
 {

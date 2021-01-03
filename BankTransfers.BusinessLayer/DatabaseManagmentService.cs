@@ -2,7 +2,12 @@
 
 namespace BankTransfers.BusinessLayer
 {
-    public class DatabaseManagmentService
+    public interface IDatabaseManagmentService
+    {
+        public void EnsureDatabaseCreation();
+    }
+
+    public class DatabaseManagmentService : IDatabaseManagmentService
     {
         public void EnsureDatabaseCreation()
         {
