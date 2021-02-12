@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BankTransfers.DataLayer", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BankTransfers.BusinessLayer", "BankTransfers.BusinessLayer\BankTransfers.BusinessLayer.csproj", "{C54E2502-3ABE-49A4-8B07-61DACEC18C13}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bank.Tests", "Bank.Tests\Bank.Tests.csproj", "{3319DC83-831A-4772-B76B-1AF8E1EEB399}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{C54E2502-3ABE-49A4-8B07-61DACEC18C13}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C54E2502-3ABE-49A4-8B07-61DACEC18C13}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C54E2502-3ABE-49A4-8B07-61DACEC18C13}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3319DC83-831A-4772-B76B-1AF8E1EEB399}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3319DC83-831A-4772-B76B-1AF8E1EEB399}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3319DC83-831A-4772-B76B-1AF8E1EEB399}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3319DC83-831A-4772-B76B-1AF8E1EEB399}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

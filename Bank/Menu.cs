@@ -3,7 +3,14 @@ using System.Collections.Generic;
 
 namespace Bank
 {
-    class Menu
+    public interface IMenu
+    {
+        public void AddOption(MenuItem item);
+        public void ExecuteOption(int optionKey);
+        public void PrintAvailableOptions();
+    }
+
+    class Menu : IMenu
     {
         private Dictionary<int, MenuItem> _options = new Dictionary<int, MenuItem>();
 

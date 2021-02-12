@@ -1,11 +1,20 @@
 ﻿using BankTransfers.DataLayer;
 using BankTransfers.DataLayer.Models;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace BankTransfers.BusinessLayer
 {
-    public class AccountsService
+    public interface IAccountsService
+    {
+        public void AddAccount(Account account);
+        public List<Account> GetAllAccounts();
+        public List<Account> GetCustomerAccounts(int customerId);
+        public double GetCurrentBalanceOfAccount(int accountId);
+    }
+
+    public class AccountsService : IAccountsService
     {
         public void AddAccount(Account account)
         {
@@ -20,7 +29,9 @@ namespace BankTransfers.BusinessLayer
         {
             using (var context = new BankDbContex())
             {
-                return context.Accounts.ToList();
+                return context.Accounts
+                    .Include(x=> x.customer)
+                    .ToList();
             }
         }
 
@@ -31,6 +42,17 @@ namespace BankTransfers.BusinessLayer
                 return context.Accounts
                     .Where(account => customerId == account.CustomerId)
                     .ToList();
+            }
+        }
+
+        public double GetCurrentBalanceOfAccount(int accountId)
+        {
+            using (var context = new BankDbContex())
+            {
+                return context.Accounts
+                    .Where(x => x.Id == accountId)
+                    .Select(x => x.Balance)
+                    .FirstOrDefault();
             }
         }
     }

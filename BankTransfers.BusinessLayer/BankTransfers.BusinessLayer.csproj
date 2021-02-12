@@ -5,7 +5,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\BankTransfers.DataLayer\BankTransfers.DataLayer.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="BankingProject.OutgoingTransfers.Sender">
+      <HintPath>..\BankingProject.OutgoingTransfers.Sender\BankingProject.OutgoingTransfers.Sender.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

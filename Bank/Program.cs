@@ -1,32 +1,91 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Timers;
 using BankTransfers.BusinessLayer;
 using BankTransfers.DataLayer.Models;
 
 namespace Bank
 {
-    class Program
+    public class Program
     {
+        private IMenu _registerMenu;
+        private IMenu _customerMenu;
+        private IIoHelper _ioHelper;
+        private IIoRegisterHelper _ioRegisterHelper;
+        private IIoTransferHelper _ioTransferHelper;
+        private IAccountsService _accountsService;
+        private ICustomersService _customersService;
+        private ITransfersService _transfersService;
+        private IDatabaseManagmentService _databaseManagmentService;
+        private IIoSerializationDesireHelper _serializationDesireHelper;
+        private IIoStatementOfOperationsHelper _ioStatementOfOperationsHelper;
+
         static void Main(string[] args)
         {
-            new Program().Run();
+            IMenu registerMenu = new Menu();
+            IMenu customerMenu = new Menu();
+            IIoHelper ioHelper = new IoHelper();
+            IIoRegisterHelper ioRegisterHelper = new IoRegisterHelper();
+            IIoTransferHelper ioTransferHelper = new IoTransferHelper();
+            IAccountsService accountsService = new AccountsService();
+            ICustomersService customersService = new CustomersService();
+            ITransfersService transfersService = new TransfersService();
+            IDatabaseManagmentService databaseManagmentService = new DatabaseManagmentService();
+            IIoSerializationDesireHelper serializationDesireHelper = new IoSerializationDesireHelper();
+            IIoStatementOfOperationsHelper ioStatementOfOperationsHelper = new IoStatementOfOperationsHelper(new TransfersService(), new StatementsOfOperationsService());
+
+            new Program(
+                registerMenu,
+                customerMenu,
+                ioHelper,
+                ioRegisterHelper,
+                ioTransferHelper,
+                accountsService,
+                customersService,
+                transfersService,
+                databaseManagmentService,
+                serializationDesireHelper,
+                ioStatementOfOperationsHelper)
+                .Run();
         }
 
-        private Menu                        _registerMenu               = new Menu();
-        private Menu                        _customerMenu               = new Menu();
-        private IoHelper                    _ioHelper                   = new IoHelper();
-        private IoRegisterHelper            _ioRegisterHelper           = new IoRegisterHelper();
-        private IoTransferHelper            _ioTransferHelper           = new IoTransferHelper();
-        private AccountsService             _accountsService            = new AccountsService();
-        private CustomersService            _customersService           = new CustomersService();
-        private TransfersService            _transfersService           = new TransfersService();
-        private DatabaseManagmentService    _databaseManagmentService   = new DatabaseManagmentService();
+        public Program(
+            IMenu registerMenu,
+            IMenu customerMenu,
+            IIoHelper ioHelper,
+            IIoRegisterHelper ioRegisterHelper,
+            IIoTransferHelper ioTransferHelper,
+            IAccountsService accountsService,
+            ICustomersService customersService,
+            ITransfersService transfersService,
+            IDatabaseManagmentService databaseManagmentService,
+            IIoSerializationDesireHelper serializationDesireFactory,
+            IIoStatementOfOperationsHelper ioStatementOfOperationsHelper)
+        {
+            _registerMenu = registerMenu;
+            _customerMenu = customerMenu;
+            _ioHelper = ioHelper;
+            _ioRegisterHelper = ioRegisterHelper;
+            _ioTransferHelper = ioTransferHelper;
+            _accountsService = accountsService;
+            _customersService = customersService;
+            _transfersService = transfersService;
+            _databaseManagmentService = databaseManagmentService;
+            _serializationDesireHelper = serializationDesireFactory;
+            _ioStatementOfOperationsHelper = ioStatementOfOperationsHelper;
+        }
 
-        private Customer _customer = null;
+        private List<Transfer> _listOfPendingTransfers = new List<Transfer>();
+        public Customer Customer { get; set; }
+
         private bool _exit = false;
+        private static Timer aTimer = new Timer(300000);
 
         private void Run()
         {
             _databaseManagmentService.EnsureDatabaseCreation();
+            aTimer.Start();
+            SetTimer();
             RegisterMenuOptions();
             
             do
@@ -62,7 +121,7 @@ namespace Bank
 
             _ioHelper.WriteString("You are logged in!");
             
-            _customer = customer;
+            Customer = customer;
             Menu();
         }
 
@@ -107,12 +166,39 @@ namespace Bank
             _customerMenu.AddOption(new MenuItem { Keys = 3, Action = OutgoingTransfer,           Description = "Make an outgoing transfer" });
             _customerMenu.AddOption(new MenuItem { Keys = 4, Action = PrintAccounts,              Description = "Check yours accounts balance" });
             _customerMenu.AddOption(new MenuItem { Keys = 5, Action = CheckTheHistoryOfTransfers, Description = "Check the history of transfers" });
-            _customerMenu.AddOption(new MenuItem { Keys = 6, Action = () => { _exit = true; },    Description = "Exit" });
+            _customerMenu.AddOption(new MenuItem { Keys = 6, Action = GeneratingAListOfOperations,Description = "Generating a list of operations" });
+            _customerMenu.AddOption(new MenuItem { Keys = 7, Action = () => { _exit = true; },    Description = "Exit" });
+        }
+
+        public void GeneratingAListOfOperations()
+        {
+            var customerAccounts = _accountsService.GetCustomerAccounts(Customer.Id);
+            if (_ioTransferHelper.ChceckIfListIsEmpty(customerAccounts) == true)
+            {
+                return;
+            }
+
+            var listOfStatementOfOperations = new List<StatementOfOperations>();
+
+            foreach (var account in customerAccounts)
+            {
+                var statementOfOperationForAccount = _ioStatementOfOperationsHelper.GetStatementOfOperationForAccount(account);
+
+                _ioStatementOfOperationsHelper.PrintStatementOfOperations(account, statementOfOperationForAccount);
+
+                listOfStatementOfOperations.Add(statementOfOperationForAccount);
+            }
+
+            Console.WriteLine();
+            var desire = _ioHelper.GetSerializationDesireFromUser("Do you want to export the operation statement to a file?");
+            Console.WriteLine();
+            
+            _serializationDesireHelper.ImplementationOfSerializationDecision(desire, listOfStatementOfOperations);
         }
 
         private void CheckTheHistoryOfTransfers()
         {
-            var history = _transfersService.GetTransfers(_customer.Id);
+            var history = _transfersService.GetAllTransfersForCustomer(Customer.Id);
             if (history.Count == 0)
             {
                 Console.WriteLine();
@@ -121,7 +207,7 @@ namespace Bank
             }
 
             Console.WriteLine();
-            _ioHelper.WriteString("The history of transfers:");
+            _ioHelper.WriteString("The history of transfers :");
             
             foreach (Transfer transfers in history)
             {                                                                           
@@ -130,29 +216,26 @@ namespace Bank
                                  GUID target account:   {transfers.TargetAccount}
                                  Transfer Title:        {transfers.Title}  
                                  Transfers Amount:      {transfers.Amount}
-                                 Typ of transfer:       {transfers.TypOfTransfer}";
+                                 Type of transfer:      {transfers.TypeOfTransfer}";
                 _ioHelper.WriteString(text);
             }
         }
 
         private void PrintAccounts()
         {
-            var customerAccounts = _accountsService.GetCustomerAccounts(_customer.Id);
-
-            if (customerAccounts.Count == 0)
+            var customerAccounts = _accountsService.GetCustomerAccounts(Customer.Id);
+            if (_ioTransferHelper.ChceckIfListIsEmpty(customerAccounts) == true)
             {
-                Console.WriteLine();
-                _ioHelper.WriteString("No accounts has been created");
                 return;
             }
 
-            _ioHelper.PrintCustomerAccounts(customerAccounts);
+            _ioTransferHelper.PrintCustomerAccounts(customerAccounts, _listOfPendingTransfers);
             Console.WriteLine();
         }
 
         private void OutgoingTransfer()
         {
-            var customerAccounts = _accountsService.GetCustomerAccounts(_customer.Id);
+            var customerAccounts = _accountsService.GetCustomerAccounts(Customer.Id);
             if (customerAccounts.Count < 1)
             {
                 Console.WriteLine();
@@ -165,34 +248,76 @@ namespace Bank
                 return;
             }
 
-            _ioHelper.PrintCustomerAccounts(customerAccounts);
+            _ioTransferHelper.PrintCustomerAccounts(customerAccounts, _listOfPendingTransfers);
             
             var sourceAccount = _ioTransferHelper.GetAccountFromUser("Make an outgoing transfer:", customerAccounts);
-            var amount = _ioTransferHelper.GetAmountFromUser(sourceAccount);
-            var targetGuid = _ioHelper.GetGuidFromUser("Provide the target account number (the number of GUID)");
+            var amount = _ioTransferHelper.GetAmountFromUser(sourceAccount, _listOfPendingTransfers);
+
+            Guid targetGuid;
+            do
+            {
+                targetGuid = _ioHelper.GetGuidFromUser("Provide the target account number (the number of GUID)");
+            }
+            while (_ioTransferHelper.CheckingIfTargetGuidIsCustomerAccount(Customer.Id, targetGuid));
+            
             var title = _ioTransferHelper.GetNotNullTextFromUser("Transfer title");
 
             Transfer newTransfer = new Transfer()
             {
-                CustomerId = _customer.Id,
+                CustomerId = Customer.Id,
                 Title = title,
                 Amount = amount,
-                DateOfTheTransfer = DateTime.Now,
-                TypOfTransfer = "External transfer",
+                TypeOfTransfer = "External transfer",
                 SourceAccount = sourceAccount.Number,
                 TargetAccount = targetGuid,
             };
-            _ioHelper.WriteString($"Date of the transfer: {newTransfer.DateOfTheTransfer}");
+            
 
-            var currentBalance = _transfersService.BalanceChangeOfSourceAccount(sourceAccount.Id, amount);
-            _ioHelper.WriteString($"Account: \"{sourceAccount.Name}\" - Balance: {currentBalance}$");
+            if (!_ioTransferHelper.CheckingIfTargetGuidIsAccountInOurBank(Customer.Id, targetGuid))
+            {
+                _listOfPendingTransfers.Add(newTransfer);
+                _ioHelper.WriteString("Your transfer has been accepted for processing.");
 
-            _transfersService.AddTransfer(newTransfer);
+            }
+            else
+            {
+                newTransfer.DateOfTheTransfer = DateTime.Now;
+                _ioHelper.WriteString($"Date of the transfer: {newTransfer.DateOfTheTransfer}");
+
+                _transfersService.BalanceChangeOfAccounts(sourceAccount.Number, targetGuid, amount);
+                var currentBalanceSource = _accountsService.GetCurrentBalanceOfAccount(sourceAccount.Id);
+
+                _ioHelper.WriteString($"Account: \"{sourceAccount.Name}\" - Balance: {currentBalanceSource}$");
+                
+                _transfersService.AddTransfer(newTransfer);
+            }
+        }
+
+        public void SetTimer()
+        {
+            aTimer.Elapsed += SendTransfers;
+            aTimer.AutoReset = true;
+            aTimer.Enabled = true;
+        }
+
+        private void SendTransfers(object source, ElapsedEventArgs e)
+        {
+            foreach (var transfer in _listOfPendingTransfers)
+            {
+                _transfersService.ReductionOfSourceAccountBalance(transfer.SourceAccount, transfer.Amount);
+                
+                transfer.DateOfTheTransfer = e.SignalTime;
+
+                _transfersService.SendTransferOut(transfer);
+
+                _transfersService.AddTransfer(transfer);
+            }
+            _listOfPendingTransfers.Clear();
         }
 
         private void DomesticTransfer()
         {
-            var customerAccounts = _accountsService.GetCustomerAccounts(_customer.Id);
+            var customerAccounts = _accountsService.GetCustomerAccounts(Customer.Id);
             if (customerAccounts.Count < 2)
             {
                 Console.WriteLine();
@@ -205,30 +330,30 @@ namespace Bank
                 return;
             }
 
-            _ioHelper.PrintCustomerAccounts(customerAccounts);
+            _ioTransferHelper.PrintCustomerAccounts(customerAccounts, _listOfPendingTransfers);
 
             var sourceAccount = _ioTransferHelper.GetAccountFromUser("Make a domestic transfer:", customerAccounts);
-            var targetAccount = _ioTransferHelper.GetAccountFromUser(customerAccounts, sourceAccount.Id);
-            var amount = _ioTransferHelper.GetAmountFromUser(sourceAccount);
+            var targetAccount = _ioTransferHelper.GetAndCheckIfTheAccountIsNonSourceAccount(customerAccounts, sourceAccount.Id);
+            var amount = _ioTransferHelper.GetAmountFromUser(sourceAccount, _listOfPendingTransfers);
             var title = _ioTransferHelper.GetNotNullTextFromUser("Transfer title");
 
             Transfer newTransfer = new Transfer()
             {
-                CustomerId = _customer.Id,
+                CustomerId = Customer.Id,
                 Title = title,
                 Amount = amount,
                 DateOfTheTransfer = DateTime.Now,
-                TypOfTransfer = "Internal transfer",
+                TypeOfTransfer = "Internal transfer",
                 SourceAccount = sourceAccount.Number,
                 TargetAccount = targetAccount.Number,
             };
 
             _ioHelper.WriteString($"Date of the transfer: {newTransfer.DateOfTheTransfer}");
 
-            var newAccountsBalance = _transfersService.BalanceChangeOfAccounts(sourceAccount.Id, targetAccount.Id, amount);
-            var currentBalanceSource = newAccountsBalance[sourceAccount.Id];
-            var currentBalanceTarget = newAccountsBalance[targetAccount.Id];
-            
+            _transfersService.BalanceChangeOfAccounts(sourceAccount.Number, targetAccount.Number, amount);
+            var currentBalanceSource = _accountsService.GetCurrentBalanceOfAccount(sourceAccount.Id);
+            var currentBalanceTarget = _accountsService.GetCurrentBalanceOfAccount(targetAccount.Id);
+
             Console.WriteLine($"Account: \"{sourceAccount.Name}\" - Balance: {currentBalanceSource}$");
             _ioHelper.WriteString($"Account: \"{targetAccount.Name}\" - Balance: {currentBalanceTarget}$");
 
@@ -243,7 +368,7 @@ namespace Bank
 
             Account newAccount = new Account()
             {
-                CustomerId = _customer.Id,
+                CustomerId = Customer.Id,
                 Name = accountName,
                 Number = _ioHelper.GenerateGuidToUser(),
                 Balance = 1000,

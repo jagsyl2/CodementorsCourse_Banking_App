@@ -5,7 +5,15 @@ using System.Linq;
 
 namespace BankTransfers.BusinessLayer
 {
-    public class CustomersService
+    public interface ICustomersService
+    {
+        public void AddCustomer(Customer customer);
+        public List<Customer> GetAllCustomers();
+        public bool CheckingIfANewCustomerIsRegistering(string eMail);
+        public Customer GetCustomer(string eMail, string password);
+    }
+
+    public class CustomersService : ICustomersService
     {
         public void AddCustomer(Customer customer)
         {
